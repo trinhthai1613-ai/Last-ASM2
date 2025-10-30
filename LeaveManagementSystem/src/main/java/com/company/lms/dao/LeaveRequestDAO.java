@@ -1,13 +1,187 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.company.lms.dao;
 
-/**
- *
- * @author hp
- */
+import com.company.lms.model.LeaveRequest;
+import com.company.lms.util.DatabaseConnection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.math.BigDecimal;
+import java.sql.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
 public class LeaveRequestDAO {
+    private static final Logger logger = LoggerFactory.getLogger(LeaveRequestDAO.class);
     
+    public boolean createLeaveRequest(LeaveRequest request) {
+        String sql = "{CALL sp_CreateLeaveRequest(?, ?, ?, ?, ?, ?, ?)}";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+            
+            stmt.setInt(1, request.getEmployeeID());
+            stmt.setInt(2, request.getLeaveTypeID());
+            stmt.setDate(3, Date.valueOf(request.getStartDate()));
+            stmt.setDate(4, Date.valueOf(request.getEndDate()));
+            
+            if (request.getReasonTemplateID() != null) {
+                stmt.setInt(5, request.getReasonTemplateID());
+            } else {
+                stmt.setNull(5, Types.INTEGER);
+            }
+            
+            if (request.getCustomReason() != null && !request.getCustomReason().isEmpty()) {
+                stmt.setString(6, request.getCustomReason());
+            } else {
+                stmt.setNull(6, Types.NVARCHAR);
+            }
+            
+            if (request.getAttachmentPath() != null && !request.getAttachmentPath().isEmpty()) {
+                stmt.setString(7, request.getAttachmentPath());
+            } else {
+                stmt.setNull(7, Types.VARCHAR);
+            }
+            
+            stmt.execute();
+            logger.info("Leave request created successfully");
+            return true;
+            
+        } catch (SQLException e) {
+            logger.error("Error creating leave request", e);
+            return false;
+        }
+    }
+    
+    public List<LeaveRequest> getLeaveRequests(int employeeID, String status) {
+        List<LeaveRequest> requests = new ArrayList<>();
+        String sql = "{CALL sp_GetLeaveRequests(?, ?)}";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+            
+            stmt.setInt(1, employeeID);
+            if (status != null && !status.isEmpty()) {
+                stmt.setString(2, status);
+            } else {
+                stmt.setNull(2, Types.VARCHAR);
+            }
+            
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                requests.add(extractLeaveRequestFromResultSet(rs));
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error getting leave requests", e);
+        }
+        
+        return requests;
+    }
+    
+    public LeaveRequest getLeaveRequestById(int requestID) {
+        String sql = "SELECT lr.*, e.FullName as EmployeeName, lt.LeaveTypeName, " +
+                    "p.FullName as ProcessedByName " +
+                    "FROM LeaveRequests lr " +
+                    "LEFT JOIN Employees e ON lr.EmployeeID = e.EmployeeID " +
+                    "LEFT JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID " +
+                    "LEFT JOIN Employees p ON lr.ProcessedBy = p.EmployeeID " +
+                    "WHERE lr.RequestID = ?";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, requestID);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return extractLeaveRequestFromResultSet(rs);
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error getting leave request by ID", e);
+        }
+        
+        return null;
+    }
+    
+    public boolean processLeaveRequest(int requestID, int processedBy, String action, String note) {
+        String sql = "{CALL sp_ProcessLeaveRequest(?, ?, ?, ?)}";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+            
+            stmt.setInt(1, requestID);
+            stmt.setInt(2, processedBy);
+            stmt.setString(3, action);
+            
+            if (note != null && !note.isEmpty()) {
+                stmt.setString(4, note);
+            } else {
+                stmt.setNull(4, Types.NVARCHAR);
+            }
+            
+            stmt.execute();
+            logger.info("Leave request processed: ID={}, Action={}", requestID, action);
+            return true;
+            
+        } catch (SQLException e) {
+            logger.error("Error processing leave request", e);
+            return false;
+        }
+    }
+    
+    private LeaveRequest extractLeaveRequestFromResultSet(ResultSet rs) throws SQLException {
+        LeaveRequest request = new LeaveRequest();
+        
+        request.setRequestID(rs.getInt("RequestID"));
+        request.setRequestCode(rs.getString("RequestCode"));
+        request.setEmployeeID(rs.getInt("EmployeeID"));
+        request.setLeaveTypeID(rs.getInt("LeaveTypeID"));
+        
+        if (rs.getDate("StartDate") != null) {
+            request.setStartDate(rs.getDate("StartDate").toLocalDate());
+        }
+        
+        if (rs.getDate("EndDate") != null) {
+            request.setEndDate(rs.getDate("EndDate").toLocalDate());
+        }
+        
+        request.setTotalDays(rs.getBigDecimal("TotalDays"));
+        
+        int templateID = rs.getInt("ReasonTemplateID");
+        if (!rs.wasNull()) {
+            request.setReasonTemplateID(templateID);
+        }
+        
+        request.setCustomReason(rs.getString("CustomReason"));
+        request.setReason(rs.getString("Reason"));
+        request.setStatus(rs.getString("Status"));
+        
+        int processedBy = rs.getInt("ProcessedBy");
+        if (!rs.wasNull()) {
+            request.setProcessedBy(processedBy);
+        }
+        
+        if (rs.getTimestamp("ProcessedDate") != null) {
+            request.setProcessedDate(rs.getTimestamp("ProcessedDate").toLocalDateTime());
+        }
+        
+        request.setProcessedNote(rs.getString("ProcessedNote"));
+        request.setAttachmentPath(rs.getString("AttachmentPath"));
+        
+        if (rs.getTimestamp("CreatedAt") != null) {
+            request.setCreatedAt(rs.getTimestamp("CreatedAt").toLocalDateTime());
+        }
+        
+        try {
+            request.setEmployeeName(rs.getString("EmployeeName"));
+            request.setLeaveTypeName(rs.getString("LeaveTypeName"));
+            request.setProcessedByName(rs.getString("ProcessedByName"));
+        } catch (SQLException e) {
+            // Columns might not exist in some queries
+        }
+        
+        return request;
+    }
 }
