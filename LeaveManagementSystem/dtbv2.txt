@@ -1,0 +1,1376 @@
+-- =============================================
+-- HỆ THỐNG QUẢN LÝ NGHỈ PHÉP NHÂN VIÊN
+-- SQL Server Management Studio 20
+-- SCRIPT HOÀN CHỈNH - CHẠY 1 LẦN DUY NHẤT
+-- =============================================
+
+-- Tạo Database
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'LeaveManagementSystem')
+BEGIN
+    CREATE DATABASE LeaveManagementSystem;
+END
+GO
+
+USE LeaveManagementSystem;
+GO
+
+-- =============================================
+-- PHẦN 1: TẠO CÁC BẢNG
+-- =============================================
+
+-- 1. BẢNG PHÒNG BAN
+CREATE TABLE Divisions (
+    DivisionID INT PRIMARY KEY IDENTITY(1,1),
+    DivisionCode VARCHAR(10) UNIQUE NOT NULL,
+    DivisionName NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(500),
+    IsActive BIT DEFAULT 1,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    UpdatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- 2. BẢNG VAI TRÒ/QUYỀN HẠN
+CREATE TABLE Roles (
+    RoleID INT PRIMARY KEY IDENTITY(1,1),
+    RoleCode VARCHAR(50) UNIQUE NOT NULL,
+    RoleName NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(500),
+    Level INT NOT NULL,
+    IsActive BIT DEFAULT 1,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    UpdatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- 3. BẢNG TÍNH NĂNG HỆ THỐNG
+CREATE TABLE Features (
+    FeatureID INT PRIMARY KEY IDENTITY(1,1),
+    FeatureCode VARCHAR(100) UNIQUE NOT NULL,
+    FeatureName NVARCHAR(100) NOT NULL,
+    FeaturePath VARCHAR(200),
+    Description NVARCHAR(500),
+    IsActive BIT DEFAULT 1,
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- 4. BẢNG PHÂN QUYỀN ROLE-FEATURE
+CREATE TABLE RoleFeatures (
+    RoleFeatureID INT PRIMARY KEY IDENTITY(1,1),
+    RoleID INT NOT NULL,
+    FeatureID INT NOT NULL,
+    CanCreate BIT DEFAULT 0,
+    CanRead BIT DEFAULT 0,
+    CanUpdate BIT DEFAULT 0,
+    CanDelete BIT DEFAULT 0,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (RoleID) REFERENCES Roles(RoleID),
+    FOREIGN KEY (FeatureID) REFERENCES Features(FeatureID),
+    UNIQUE(RoleID, FeatureID)
+);
+
+-- 5. BẢNG NHÂN VIÊN
+CREATE TABLE Employees (
+    EmployeeID INT PRIMARY KEY IDENTITY(1,1),
+    EmployeeCode VARCHAR(20) UNIQUE NOT NULL,
+    Username VARCHAR(100) UNIQUE NOT NULL,
+    PasswordHash VARCHAR(255) NOT NULL,
+    Email VARCHAR(100) UNIQUE NOT NULL,
+    FullName NVARCHAR(200) NOT NULL,
+    PhoneNumber VARCHAR(20),
+    DateOfBirth DATE,
+    Gender NVARCHAR(10),
+    HireDate DATE NOT NULL,
+    DivisionID INT NOT NULL,
+    ManagerID INT NULL,
+    IsActive BIT DEFAULT 1,
+    LastLogin DATETIME,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    UpdatedAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (DivisionID) REFERENCES Divisions(DivisionID),
+    FOREIGN KEY (ManagerID) REFERENCES Employees(EmployeeID)
+);
+
+-- 6. BẢNG PHÂN QUYỀN NHÂN VIÊN
+CREATE TABLE EmployeeRoles (
+    EmployeeRoleID INT PRIMARY KEY IDENTITY(1,1),
+    EmployeeID INT NOT NULL,
+    RoleID INT NOT NULL,
+    AssignedDate DATETIME DEFAULT GETDATE(),
+    IsActive BIT DEFAULT 1,
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID),
+    FOREIGN KEY (RoleID) REFERENCES Roles(RoleID),
+    UNIQUE(EmployeeID, RoleID)
+);
+
+-- 7. BẢNG LOẠI NGHỈ PHÉP
+CREATE TABLE LeaveTypes (
+    LeaveTypeID INT PRIMARY KEY IDENTITY(1,1),
+    LeaveTypeCode VARCHAR(20) UNIQUE NOT NULL,
+    LeaveTypeName NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(500),
+    DefaultDaysPerYear INT DEFAULT 12,
+    RequiresApproval BIT DEFAULT 1,
+    IsPaid BIT DEFAULT 1,
+    AllowCustomReason BIT DEFAULT 1,
+    IsActive BIT DEFAULT 1,
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- 7B. BẢNG LÝ DO NGHỈ PHÉP MẪU
+CREATE TABLE LeaveReasonTemplates (
+    TemplateID INT PRIMARY KEY IDENTITY(1,1),
+    LeaveTypeID INT NOT NULL,
+    ReasonText NVARCHAR(500) NOT NULL,
+    Description NVARCHAR(500),
+    IsActive BIT DEFAULT 1,
+    UsageCount INT DEFAULT 0,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (LeaveTypeID) REFERENCES LeaveTypes(LeaveTypeID)
+);
+
+-- 8. BẢNG QUOTA NGHỈ PHÉP
+CREATE TABLE LeaveQuotas (
+    QuotaID INT PRIMARY KEY IDENTITY(1,1),
+    EmployeeID INT NOT NULL,
+    LeaveTypeID INT NOT NULL,
+    Year INT NOT NULL,
+    TotalDays DECIMAL(5,1) NOT NULL,
+    UsedDays DECIMAL(5,1) DEFAULT 0,
+    RemainingDays DECIMAL(5,1) NOT NULL,
+    CarryOverDays DECIMAL(5,1) DEFAULT 0,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    UpdatedAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID),
+    FOREIGN KEY (LeaveTypeID) REFERENCES LeaveTypes(LeaveTypeID),
+    UNIQUE(EmployeeID, LeaveTypeID, Year)
+);
+
+-- 9. BẢNG ĐƠN XIN NGHỈ PHÉP
+CREATE TABLE LeaveRequests (
+    RequestID INT PRIMARY KEY IDENTITY(1,1),
+    RequestCode VARCHAR(50) UNIQUE NOT NULL,
+    EmployeeID INT NOT NULL,
+    LeaveTypeID INT NOT NULL,
+    StartDate DATE NOT NULL,
+    EndDate DATE NOT NULL,
+    TotalDays DECIMAL(5,1) NOT NULL,
+    ReasonTemplateID INT NULL,
+    CustomReason NVARCHAR(1000) NULL,
+    Reason NVARCHAR(1000) NOT NULL,
+    Status VARCHAR(20) NOT NULL DEFAULT 'InProgress',
+    ProcessedBy INT NULL,
+    ProcessedDate DATETIME NULL,
+    ProcessedNote NVARCHAR(1000),
+    AttachmentPath VARCHAR(500),
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    UpdatedAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID),
+    FOREIGN KEY (LeaveTypeID) REFERENCES LeaveTypes(LeaveTypeID),
+    FOREIGN KEY (ReasonTemplateID) REFERENCES LeaveReasonTemplates(TemplateID),
+    FOREIGN KEY (ProcessedBy) REFERENCES Employees(EmployeeID),
+    CHECK (EndDate >= StartDate),
+    CHECK (Status IN ('InProgress', 'Approved', 'Rejected', 'Cancelled')),
+    CHECK (ReasonTemplateID IS NOT NULL OR CustomReason IS NOT NULL)
+);
+
+-- 10. BẢNG LỊCH SỬ TRẠNG THÁI ĐƠN
+CREATE TABLE RequestStatusHistory (
+    HistoryID INT PRIMARY KEY IDENTITY(1,1),
+    RequestID INT NOT NULL,
+    FromStatus VARCHAR(20),
+    ToStatus VARCHAR(20) NOT NULL,
+    ChangedBy INT NOT NULL,
+    ChangedDate DATETIME DEFAULT GETDATE(),
+    Note NVARCHAR(1000),
+    FOREIGN KEY (RequestID) REFERENCES LeaveRequests(RequestID),
+    FOREIGN KEY (ChangedBy) REFERENCES Employees(EmployeeID)
+);
+
+-- 11. BẢNG AUDIT LOGS
+CREATE TABLE AuditLogs (
+    AuditID BIGINT PRIMARY KEY IDENTITY(1,1),
+    TableName VARCHAR(100) NOT NULL,
+    RecordID INT NOT NULL,
+    Action VARCHAR(20) NOT NULL,
+    EmployeeID INT NULL,
+    OldValue NVARCHAR(MAX),
+    NewValue NVARCHAR(MAX),
+    IPAddress VARCHAR(50),
+    UserAgent NVARCHAR(500),
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+);
+
+-- 12. BẢNG NGÀY LỄ/NGÀY NGHỈ
+CREATE TABLE Holidays (
+    HolidayID INT PRIMARY KEY IDENTITY(1,1),
+    HolidayName NVARCHAR(200) NOT NULL,
+    HolidayDate DATE NOT NULL,
+    Year INT NOT NULL,
+    IsRecurring BIT DEFAULT 0,
+    Description NVARCHAR(500),
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- 13. BẢNG CẤU HÌNH HỆ THỐNG
+CREATE TABLE SystemSettings (
+    SettingID INT PRIMARY KEY IDENTITY(1,1),
+    SettingKey VARCHAR(100) UNIQUE NOT NULL,
+    SettingValue NVARCHAR(1000),
+    Description NVARCHAR(500),
+    UpdatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- 14. BẢNG THÔNG BÁO
+CREATE TABLE Notifications (
+    NotificationID INT PRIMARY KEY IDENTITY(1,1),
+    EmployeeID INT NOT NULL,
+    Title NVARCHAR(200) NOT NULL,
+    Message NVARCHAR(1000) NOT NULL,
+    NotificationType VARCHAR(50),
+    RelatedRequestID INT NULL,
+    IsRead BIT DEFAULT 0,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    ReadAt DATETIME NULL,
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID),
+    FOREIGN KEY (RelatedRequestID) REFERENCES LeaveRequests(RequestID)
+);
+
+-- =============================================
+-- PHẦN 2: INSERT DỮ LIỆU MẪU
+-- =============================================
+
+-- Insert Divisions
+INSERT INTO Divisions (DivisionCode, DivisionName, Description) VALUES
+('IT', N'Phòng Công Nghệ Thông Tin', N'Quản lý hệ thống, phát triển phần mềm'),
+('HR', N'Phòng Nhân Sự', N'Quản lý nhân sự, tuyển dụng'),
+('SALE', N'Phòng Kinh Doanh', N'Phát triển kinh doanh, chăm sóc khách hàng'),
+('QA', N'Phòng Kiểm Thử', N'Đảm bảo chất lượng sản phẩm'),
+('MKT', N'Phòng Marketing', N'Marketing và truyền thông'),
+('FIN', N'Phòng Tài Chính', N'Quản lý tài chính, kế toán'),
+('OPS', N'Phòng Vận Hành', N'Vận hành và hỗ trợ');
+
+-- Insert Roles
+INSERT INTO Roles (RoleCode, RoleName, Description, Level) VALUES
+('CEO', N'Giám Đốc Điều Hành', N'Quyền cao nhất trong công ty', 1),
+('DIV_LEADER', N'Trưởng Phòng', N'Quản lý toàn bộ phòng ban', 2),
+('TEAM_LEADER', N'Trưởng Nhóm', N'Quản lý nhóm trong phòng ban', 3),
+('EMPLOYEE', N'Nhân Viên', N'Nhân viên thông thường', 4),
+('HR_MANAGER', N'Quản Lý Nhân Sự', N'Quản lý nhân sự toàn công ty', 2),
+('ACCOUNTANT', N'Kế Toán', N'Quản lý tài chính', 3),
+('ADMIN', N'Quản Trị Hệ Thống', N'Quản trị viên hệ thống', 1);
+
+-- Insert Features
+INSERT INTO Features (FeatureCode, FeatureName, FeaturePath, Description) VALUES
+('HOME', N'Trang Chủ', '/home', N'Trang chủ hệ thống'),
+('REQ_CREATE', N'Tạo Đơn Nghỉ Phép', '/request/create', N'Tạo đơn xin nghỉ phép mới'),
+('REQ_LIST', N'Xem Danh Sách Đơn', '/request/list', N'Xem danh sách đơn của mình'),
+('REQ_VIEW', N'Xem Chi Tiết Đơn', '/request/view', N'Xem chi tiết đơn nghỉ phép'),
+('REQ_MODIFY', N'Chỉnh Sửa Đơn', '/request/modify', N'Chỉnh sửa đơn nghỉ phép'),
+('REQ_CANCEL', N'Hủy Đơn', '/request/cancel', N'Hủy đơn nghỉ phép'),
+('REQ_REVIEW', N'Xét Duyệt Đơn', '/request/review', N'Xét duyệt đơn của cấp dưới'),
+('REQ_LIST_TEAM', N'Xem Đơn Của Team', '/request/list-team', N'Xem đơn của cả team'),
+('AGENDA_VIEW', N'Xem Agenda Phòng', '/agenda/view', N'Xem lịch nghỉ phép của phòng'),
+('QUOTA_VIEW', N'Xem Số Ngày Phép', '/quota/view', N'Xem số ngày phép còn lại'),
+('REPORT_VIEW', N'Xem Báo Cáo', '/report/view', N'Xem các báo cáo thống kê'),
+('EMPLOYEE_MANAGE', N'Quản Lý Nhân Viên', '/employee/manage', N'Quản lý thông tin nhân viên'),
+('AUDIT_VIEW', N'Xem Audit Logs', '/audit/view', N'Xem nhật ký hệ thống');
+
+-- Insert RoleFeatures (CEO - Full access)
+INSERT INTO RoleFeatures (RoleID, FeatureID, CanCreate, CanRead, CanUpdate, CanDelete)
+SELECT 1, FeatureID, 1, 1, 1, 1 FROM Features;
+
+-- Division Leader
+INSERT INTO RoleFeatures (RoleID, FeatureID, CanCreate, CanRead, CanUpdate, CanDelete) VALUES
+(2, 1, 0, 1, 0, 0), (2, 2, 1, 1, 0, 0), (2, 3, 0, 1, 0, 0), (2, 4, 0, 1, 0, 0),
+(2, 5, 0, 1, 1, 0), (2, 6, 0, 1, 1, 0), (2, 7, 0, 1, 1, 0), (2, 8, 0, 1, 0, 0),
+(2, 9, 0, 1, 0, 0), (2, 10, 0, 1, 0, 0), (2, 11, 0, 1, 0, 0);
+
+-- Team Leader
+INSERT INTO RoleFeatures (RoleID, FeatureID, CanCreate, CanRead, CanUpdate, CanDelete) VALUES
+(3, 1, 0, 1, 0, 0), (3, 2, 1, 1, 0, 0), (3, 3, 0, 1, 0, 0), (3, 4, 0, 1, 0, 0),
+(3, 5, 0, 1, 1, 0), (3, 6, 0, 1, 1, 0), (3, 7, 0, 1, 1, 0), (3, 8, 0, 1, 0, 0),
+(3, 10, 0, 1, 0, 0);
+
+-- Employee
+INSERT INTO RoleFeatures (RoleID, FeatureID, CanCreate, CanRead, CanUpdate, CanDelete) VALUES
+(4, 1, 0, 1, 0, 0), (4, 2, 1, 1, 0, 0), (4, 3, 0, 1, 0, 0), (4, 4, 0, 1, 0, 0),
+(4, 5, 0, 1, 1, 0), (4, 6, 0, 1, 1, 0), (4, 10, 0, 1, 0, 0);
+
+-- HR Manager
+INSERT INTO RoleFeatures (RoleID, FeatureID, CanCreate, CanRead, CanUpdate, CanDelete) VALUES
+(5, 1, 0, 1, 0, 0), (5, 2, 1, 1, 0, 0), (5, 3, 0, 1, 0, 0), (5, 4, 0, 1, 0, 0),
+(5, 9, 0, 1, 0, 0), (5, 10, 0, 1, 0, 0), (5, 11, 0, 1, 0, 0), (5, 12, 1, 1, 1, 1),
+(5, 13, 0, 1, 0, 0);
+
+-- Admin
+INSERT INTO RoleFeatures (RoleID, FeatureID, CanCreate, CanRead, CanUpdate, CanDelete)
+SELECT 7, FeatureID, 1, 1, 1, 1 FROM Features;
+
+-- Insert Employees
+INSERT INTO Employees (EmployeeCode, Username, PasswordHash, Email, FullName, HireDate, DivisionID, ManagerID) VALUES
+('EMP001', 'ceo.nguyen', 'hashed_password_here', 'ceo@company.com', N'Nguyễn Văn CEO', '2020-01-01', 1, NULL),
+('EMP002', 'mr.a', 'hashed_password_here', 'mra@company.com', N'Trần Văn A', '2020-06-01', 1, 1),
+('EMP003', 'mr.b', 'hashed_password_here', 'mrb@company.com', N'Lê Văn B', '2021-01-15', 1, 2),
+('EMP004', 'mr.c', 'hashed_password_here', 'mrc@company.com', N'Phạm Văn C', '2021-02-01', 1, 2),
+('EMP005', 'mr.d', 'hashed_password_here', 'mrd@company.com', N'Hoàng Văn D', '2021-06-01', 1, 3),
+('EMP006', 'mr.e', 'hashed_password_here', 'mre@company.com', N'Đặng Văn E', '2021-07-01', 1, 3),
+('EMP007', 'mr.f', 'hashed_password_here', 'mrf@company.com', N'Vũ Văn F', '2021-08-01', 1, 4),
+('EMP008', 'mr.g', 'hashed_password_here', 'mrg@company.com', N'Bùi Văn G', '2022-01-01', 1, 4),
+('EMP009', 'mr.h', 'hashed_password_here', 'mrh@company.com', N'Dương Văn H', '2022-02-01', 1, 4),
+('EMP010', 'hr.manager', 'hashed_password_here', 'hr.manager@company.com', N'Nguyễn Thị HR', '2020-03-01', 2, 1),
+('EMP011', 'hr.staff1', 'hashed_password_here', 'hr.staff1@company.com', N'Trần Thị Hoa', '2021-04-01', 2, 10),
+('EMP012', 'hr.staff2', 'hashed_password_here', 'hr.staff2@company.com', N'Lê Thị Mai', '2021-05-01', 2, 10),
+('EMP013', 'sale.manager', 'hashed_password_here', 'sale.manager@company.com', N'Phạm Văn Sale', '2020-04-01', 3, 1),
+('EMP014', 'sale.lead1', 'hashed_password_here', 'sale.lead1@company.com', N'Hoàng Thị Lan', '2021-03-01', 3, 13),
+('EMP015', 'sale.staff1', 'hashed_password_here', 'sale.staff1@company.com', N'Đặng Văn Kinh', '2021-09-01', 3, 14),
+('EMP016', 'sale.staff2', 'hashed_password_here', 'sale.staff2@company.com', N'Vũ Thị Doanh', '2022-03-01', 3, 14),
+('EMP017', 'qa.manager', 'hashed_password_here', 'qa.manager@company.com', N'Bùi Văn QA', '2020-05-01', 4, 1),
+('EMP018', 'qa.staff1', 'hashed_password_here', 'qa.staff1@company.com', N'Dương Thị Test', '2021-10-01', 4, 17),
+('EMP019', 'qa.staff2', 'hashed_password_here', 'qa.staff2@company.com', N'Nguyễn Văn Bug', '2022-04-01', 4, 17);
+
+-- Insert EmployeeRoles
+INSERT INTO EmployeeRoles (EmployeeID, RoleID) VALUES
+(1, 1), (2, 2), (3, 3), (4, 3), (5, 4), (6, 4), (7, 4), (8, 4), (9, 4),
+(10, 5), (11, 4), (12, 4), (13, 2), (14, 3), (15, 4), (16, 4), (17, 2), (18, 4), (19, 4);
+
+-- Insert LeaveTypes
+INSERT INTO LeaveTypes (LeaveTypeCode, LeaveTypeName, Description, DefaultDaysPerYear, RequiresApproval, IsPaid, AllowCustomReason) VALUES
+('ANNUAL', N'Nghỉ Phép Năm', N'Nghỉ phép năm theo quy định', 12, 1, 1, 1),
+('SICK', N'Nghỉ Ốm', N'Nghỉ ốm có xác nhận y tế', 30, 1, 1, 1),
+('MARRIAGE', N'Nghỉ Cưới', N'Nghỉ phép kết hôn', 3, 1, 1, 0),
+('MATERNITY', N'Nghỉ Thai Sản', N'Nghỉ sinh con', 180, 1, 1, 0),
+('PATERNITY', N'Nghỉ Con Nhỏ', N'Nghỉ chăm sóc con nhỏ (dành cho bố)', 5, 1, 1, 0),
+('BEREAVEMENT', N'Nghỉ Tang', N'Nghỉ phép tang gia', 3, 1, 1, 1),
+('UNPAID', N'Nghỉ Không Lương', N'Nghỉ không hưởng lương', 0, 1, 0, 1),
+('COMPENSATORY', N'Nghỉ Bù', N'Nghỉ bù do làm thêm giờ', 0, 1, 1, 1);
+
+-- Insert LeaveReasonTemplates
+INSERT INTO LeaveReasonTemplates (LeaveTypeID, ReasonText, Description) VALUES
+(1, N'Nghỉ phép về quê thăm gia đình', N'Về quê thăm người thân'),
+(1, N'Nghỉ phép du lịch nghỉ dưỡng', N'Đi du lịch, nghỉ ngơi'),
+(1, N'Nghỉ phép giải quyết công việc cá nhân', N'Xử lý việc riêng'),
+(1, N'Nghỉ phép đi khám sức khỏe định kỳ', N'Khám sức khỏe tổng quát'),
+(1, N'Nghỉ phép tham dự sự kiện gia đình', N'Dự tiệc, họp mặt gia đình'),
+(2, N'Nghỉ ốm do cảm cúm, sốt', N'Bệnh thông thường'),
+(2, N'Nghỉ ốm do đau bụng, rối loạn tiêu hóa', N'Vấn đề tiêu hóa'),
+(2, N'Nghỉ ốm do tai nạn, chấn thương', N'Tai nạn, chấn thương'),
+(2, N'Nghỉ ốm để điều trị bệnh', N'Điều trị y tế'),
+(2, N'Nghỉ chăm sóc người thân ốm đau', N'Chăm người thân bệnh'),
+(6, N'Tang lễ ông/bà nội/ngoại', N'Tang lễ ông bà'),
+(6, N'Tang lễ cha/mẹ', N'Tang lễ bố mẹ'),
+(6, N'Tang lễ anh/chị/em ruột', N'Tang lễ anh chị em'),
+(6, N'Tang lễ người thân trong gia đình', N'Tang lễ họ hàng'),
+(7, N'Nghỉ để tham gia khóa học, đào tạo', N'Học tập, nâng cao kỹ năng'),
+(7, N'Nghỉ để giải quyết việc cá nhân quan trọng', N'Việc cá nhân khẩn cấp'),
+(7, N'Nghỉ để chăm sóc gia đình', N'Chăm sóc con nhỏ, người già'),
+(8, N'Nghỉ bù do làm thêm giờ cuối tuần', N'Làm thêm T7/CN'),
+(8, N'Nghỉ bù do làm thêm giờ trong dự án', N'OT cho dự án'),
+(8, N'Nghỉ bù do làm việc vào ngày lễ', N'Làm việc ngày nghỉ lễ');
+
+-- Insert LeaveQuotas
+INSERT INTO LeaveQuotas (EmployeeID, LeaveTypeID, Year, TotalDays, UsedDays, RemainingDays)
+SELECT 
+    e.EmployeeID,
+    lt.LeaveTypeID,
+    2025,
+    lt.DefaultDaysPerYear,
+    0,
+    lt.DefaultDaysPerYear
+FROM Employees e
+CROSS JOIN LeaveTypes lt
+WHERE lt.LeaveTypeCode IN ('ANNUAL', 'SICK');
+
+-- Insert Sample Leave Requests
+INSERT INTO LeaveRequests (RequestCode, EmployeeID, LeaveTypeID, StartDate, EndDate, TotalDays, ReasonTemplateID, CustomReason, Reason, Status) VALUES
+('LR-2025-0001', 7, 1, '2025-01-10', '2025-01-12', 3, 1, NULL, N'Nghỉ phép về quê thăm gia đình', 'Approved'),
+('LR-2025-0002', 9, 1, '2025-01-15', '2025-01-17', 3, NULL, N'Nghỉ phép để tham gia đám cưới bạn thân ở Đà Nẵng', N'Nghỉ phép để tham gia đám cưới bạn thân ở Đà Nẵng', 'InProgress'),
+('LR-2025-0003', 5, 3, '2025-02-14', '2025-02-16', 3, NULL, N'Nghỉ phép kết hôn - đám cưới tại TP.HCM', N'Nghỉ phép kết hôn - đám cưới tại TP.HCM', 'InProgress'),
+('LR-2025-0004', 15, 1, '2025-03-01', '2025-03-05', 5, 2, N'và ghé thăm Phú Quốc', N'Nghỉ phép du lịch nghỉ dưỡng và ghé thăm Phú Quốc', 'Rejected'),
+('LR-2025-0005', 18, 2, '2025-02-01', '2025-02-03', 3, 1, NULL, N'Nghỉ ốm do cảm cúm, sốt', 'Approved'),
+('LR-2025-0006', 11, 7, '2025-03-10', '2025-03-12', 3, NULL, N'Cần thời gian chuẩn bị cho kỳ thi IELTS', N'Cần thời gian chuẩn bị cho kỳ thi IELTS', 'InProgress');
+
+-- Insert Holidays
+INSERT INTO Holidays (HolidayName, HolidayDate, Year, IsRecurring, Description) VALUES
+(N'Tết Dương Lịch', '2025-01-01', 2025, 1, N'Năm mới dương lịch'),
+(N'Tết Nguyên Đán', '2025-01-28', 2025, 1, N'Tết âm lịch ngày 1'),
+(N'Tết Nguyên Đán', '2025-01-29', 2025, 1, N'Tết âm lịch ngày 2'),
+(N'Tết Nguyên Đán', '2025-01-30', 2025, 1, N'Tết âm lịch ngày 3'),
+(N'Tết Nguyên Đán', '2025-01-31', 2025, 1, N'Tết âm lịch ngày 4'),
+(N'Giỗ Tổ Hùng Vương', '2025-04-18', 2025, 1, N'Ngày Giỗ Tổ Hùng Vương'),
+(N'Ngày Giải Phóng', '2025-04-30', 2025, 1, N'Ngày Giải Phóng Miền Nam'),
+(N'Ngày Quốc Tế Lao Động', '2025-05-01', 2025, 1, N'Ngày Quốc Tế Lao Động'),
+(N'Quốc Khánh', '2025-09-02', 2025, 1, N'Ngày Quốc Khánh Việt Nam');
+
+-- Insert System Settings
+INSERT INTO SystemSettings (SettingKey, SettingValue, Description) VALUES
+('MAX_LEAVE_DAYS_PER_REQUEST', '30', N'Số ngày nghỉ tối đa trong 1 đơn'),
+('MIN_DAYS_BEFORE_LEAVE', '3', N'Số ngày tối thiểu phải đăng ký trước khi nghỉ'),
+('AUTO_APPROVE_THRESHOLD', '0', N'Tự động duyệt nếu số ngày <= giá trị này (0 = không tự động)'),
+('NOTIFICATION_ENABLED', '1', N'Bật/tắt thông báo email'),
+('CARRY_OVER_ENABLED', '1', N'Cho phép chuyển ngày phép sang năm sau'),
+('MAX_CARRY_OVER_DAYS', '5', N'Số ngày phép tối đa được chuyển sang năm sau'),
+('WORKING_DAYS_PER_WEEK', '5', N'Số ngày làm việc trong tuần'),
+('COMPANY_EMAIL', 'admin@company.com', N'Email công ty'),
+('COMPANY_NAME', N'CÔNG TY X', N'Tên công ty');
+
+-- =============================================
+-- PHẦN 3: TẠO STORED PROCEDURES
+-- =============================================
+
+-- SP1: Tạo đơn nghỉ phép (hỗ trợ custom reason)
+GO
+CREATE PROCEDURE sp_CreateLeaveRequest
+    @EmployeeID INT,
+    @LeaveTypeID INT,
+    @StartDate DATE,
+    @EndDate DATE,
+    @ReasonTemplateID INT = NULL,
+    @CustomReason NVARCHAR(1000) = NULL,
+    @AttachmentPath VARCHAR(500) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        -- Kiểm tra phải có ít nhất 1 loại lý do
+        IF @ReasonTemplateID IS NULL AND @CustomReason IS NULL
+        BEGIN
+            RAISERROR(N'Phải cung cấp lý do nghỉ phép (template hoặc custom reason)', 16, 1);
+            RETURN;
+        END
+        
+        -- Kiểm tra AllowCustomReason
+        DECLARE @AllowCustomReason BIT;
+        SELECT @AllowCustomReason = AllowCustomReason 
+        FROM LeaveTypes 
+        WHERE LeaveTypeID = @LeaveTypeID;
+        
+        IF @CustomReason IS NOT NULL AND @AllowCustomReason = 0
+        BEGIN
+            RAISERROR(N'Loại nghỉ phép này không cho phép nhập lý do tùy chỉnh', 16, 1);
+            RETURN;
+        END
+        
+        DECLARE @TotalDays DECIMAL(5,1);
+        DECLARE @RequestCode VARCHAR(50);
+        DECLARE @NewRequestID INT;
+        DECLARE @FinalReason NVARCHAR(1000);
+        
+        -- Tính số ngày làm việc
+        SET @TotalDays = (
+            SELECT COUNT(*)
+            FROM (
+                SELECT DATEADD(DAY, number, @StartDate) AS WorkDate
+                FROM master..spt_values
+                WHERE type = 'P' AND number <= DATEDIFF(DAY, @StartDate, @EndDate)
+            ) dates
+            WHERE DATEPART(WEEKDAY, WorkDate) NOT IN (1, 7)
+        );
+        
+        -- Xác định lý do cuối cùng
+        IF @ReasonTemplateID IS NOT NULL
+        BEGIN
+            DECLARE @TemplateText NVARCHAR(500);
+            SELECT @TemplateText = ReasonText 
+            FROM LeaveReasonTemplates 
+            WHERE TemplateID = @ReasonTemplateID;
+            
+            IF @CustomReason IS NOT NULL AND LEN(LTRIM(RTRIM(@CustomReason))) > 0
+                SET @FinalReason = @TemplateText + N' ' + @CustomReason;
+            ELSE
+                SET @FinalReason = @TemplateText;
+                
+            UPDATE LeaveReasonTemplates 
+            SET UsageCount = UsageCount + 1 
+            WHERE TemplateID = @ReasonTemplateID;
+        END
+        ELSE
+        BEGIN
+            SET @FinalReason = @CustomReason;
+        END
+        
+        -- Tạo mã đơn
+        DECLARE @Year VARCHAR(4) = CAST(YEAR(GETDATE()) AS VARCHAR(4));
+        DECLARE @SeqNum VARCHAR(4);
+        
+        SELECT @SeqNum = RIGHT('0000' + CAST(COUNT(*) + 1 AS VARCHAR), 4)
+        FROM LeaveRequests
+        WHERE YEAR(CreatedAt) = YEAR(GETDATE());
+        
+        SET @RequestCode = 'LR-' + @Year + '-' + @SeqNum;
+        
+        -- Insert đơn nghỉ phép
+        INSERT INTO LeaveRequests (
+            RequestCode, EmployeeID, LeaveTypeID, StartDate, EndDate, 
+            TotalDays, ReasonTemplateID, CustomReason, Reason, Status, AttachmentPath
+        )
+        VALUES (
+            @RequestCode, @EmployeeID, @LeaveTypeID, @StartDate, @EndDate,
+            @TotalDays, @ReasonTemplateID, @CustomReason, @FinalReason, 'InProgress', @AttachmentPath
+        );
+        
+        SET @NewRequestID = SCOPE_IDENTITY();
+        
+        -- Ghi lịch sử trạng thái
+        INSERT INTO RequestStatusHistory (RequestID, FromStatus, ToStatus, ChangedBy, Note)
+        VALUES (@NewRequestID, NULL, 'InProgress', @EmployeeID, N'Tạo đơn mới');
+        
+        -- Ghi audit log
+        INSERT INTO AuditLogs (TableName, RecordID, Action, EmployeeID, NewValue)
+        VALUES ('LeaveRequests', @NewRequestID, 'INSERT', @EmployeeID, 
+                CONCAT('RequestCode:', @RequestCode, ', StartDate:', @StartDate, ', EndDate:', @EndDate, ', Reason:', @FinalReason));
+        
+        -- Tạo thông báo cho quản lý
+        DECLARE @ManagerID INT;
+        SELECT @ManagerID = ManagerID FROM Employees WHERE EmployeeID = @EmployeeID;
+        
+        IF @ManagerID IS NOT NULL
+        BEGIN
+            INSERT INTO Notifications (EmployeeID, Title, Message, NotificationType, RelatedRequestID)
+            VALUES (@ManagerID, N'Đơn nghỉ phép mới cần xét duyệt', 
+                    CONCAT(N'Bạn có đơn nghỉ phép mới từ nhân viên cần xét duyệt. Mã đơn: ', @RequestCode),
+                    'LeaveRequest', @NewRequestID);
+        END
+        
+        COMMIT TRANSACTION;
+        
+        SELECT @NewRequestID AS RequestID, @RequestCode AS RequestCode, @FinalReason AS FinalReason, 'SUCCESS' AS Status;
+        
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END;
+GO
+
+-- SP2: Xét duyệt đơn nghỉ phép
+GO
+CREATE PROCEDURE sp_ProcessLeaveRequest
+    @RequestID INT,
+    @ProcessedBy INT,
+    @Action VARCHAR(20),
+    @ProcessedNote NVARCHAR(1000) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        DECLARE @NewStatus VARCHAR(20);
+        DECLARE @OldStatus VARCHAR(20);
+        DECLARE @EmployeeID INT;
+        DECLARE @LeaveTypeID INT;
+        DECLARE @TotalDays DECIMAL(5,1);
+        DECLARE @Year INT = YEAR(GETDATE());
+        
+        SELECT 
+            @OldStatus = Status,
+            @EmployeeID = EmployeeID,
+            @LeaveTypeID = LeaveTypeID,
+            @TotalDays = TotalDays
+        FROM LeaveRequests
+        WHERE RequestID = @RequestID;
+        
+        IF @OldStatus != 'InProgress'
+        BEGIN
+            RAISERROR(N'Đơn này đã được xử lý rồi!', 16, 1);
+            RETURN;
+        END
+        
+        SET @NewStatus = CASE WHEN @Action = 'APPROVE' THEN 'Approved' ELSE 'Rejected' END;
+        
+        UPDATE LeaveRequests
+        SET Status = @NewStatus,
+            ProcessedBy = @ProcessedBy,
+            ProcessedDate = GETDATE(),
+            ProcessedNote = @ProcessedNote,
+            UpdatedAt = GETDATE()
+        WHERE RequestID = @RequestID;
+        
+        INSERT INTO RequestStatusHistory (RequestID, FromStatus, ToStatus, ChangedBy, Note)
+        VALUES (@RequestID, @OldStatus, @NewStatus, @ProcessedBy, @ProcessedNote);
+        
+        IF @Action = 'APPROVE'
+        BEGIN
+            UPDATE LeaveQuotas
+            SET UsedDays = UsedDays + @TotalDays,
+                RemainingDays = RemainingDays - @TotalDays,
+                UpdatedAt = GETDATE()
+            WHERE EmployeeID = @EmployeeID 
+                AND LeaveTypeID = @LeaveTypeID 
+                AND Year = @Year;
+        END
+        
+        INSERT INTO AuditLogs (TableName, RecordID, Action, EmployeeID, OldValue, NewValue)
+        VALUES ('LeaveRequests', @RequestID, 'UPDATE', @ProcessedBy,
+                CONCAT('Status:', @OldStatus),
+                CONCAT('Status:', @NewStatus, ', ProcessedBy:', @ProcessedBy));
+        
+        DECLARE @NotifMessage NVARCHAR(1000);
+        SET @NotifMessage = CASE 
+            WHEN @Action = 'APPROVE' THEN N'Đơn nghỉ phép của bạn đã được phê duyệt'
+            ELSE N'Đơn nghỉ phép của bạn đã bị từ chối'
+        END;
+        
+        INSERT INTO Notifications (EmployeeID, Title, Message, NotificationType, RelatedRequestID)
+        VALUES (@EmployeeID, @NotifMessage, 
+                ISNULL(@ProcessedNote, N'Không có ghi chú'),
+                CASE WHEN @Action = 'APPROVE' THEN 'Approval' ELSE 'Rejection' END,
+                @RequestID);
+        
+        COMMIT TRANSACTION;
+        
+        SELECT 'SUCCESS' AS Status, @NewStatus AS NewStatus;
+        
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END;
+GO
+
+-- SP3: Lấy danh sách đơn theo phân quyền
+GO
+CREATE PROCEDURE sp_GetLeaveRequests
+    @EmployeeID INT,
+    @Status VARCHAR(20) = NULL,
+    @StartDate DATE = NULL,
+    @EndDate DATE = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @RoleLevel INT;
+    DECLARE @DivisionID INT;
+    
+    SELECT TOP 1 
+        @RoleLevel = r.Level,
+        @DivisionID = e.DivisionID
+    FROM Employees e
+    INNER JOIN EmployeeRoles er ON e.EmployeeID = er.EmployeeID
+    INNER JOIN Roles r ON er.RoleID = r.RoleID
+    WHERE e.EmployeeID = @EmployeeID
+    ORDER BY r.Level;
+    
+    SELECT 
+        lr.RequestID,
+        lr.RequestCode,
+        lr.StartDate,
+        lr.EndDate,
+        lr.TotalDays,
+        lr.Reason,
+        lr.Status,
+        lr.CreatedAt,
+        e.EmployeeCode,
+        e.FullName AS EmployeeName,
+        d.DivisionName,
+        lt.LeaveTypeName,
+        p.FullName AS ProcessedByName,
+        lr.ProcessedDate,
+        lr.ProcessedNote
+    FROM LeaveRequests lr
+    INNER JOIN Employees e ON lr.EmployeeID = e.EmployeeID
+    INNER JOIN Divisions d ON e.DivisionID = d.DivisionID
+    INNER JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID
+    LEFT JOIN Employees p ON lr.ProcessedBy = p.EmployeeID
+    WHERE 
+        (
+            @RoleLevel <= 1
+            OR
+            (@RoleLevel = 2 AND e.DivisionID = @DivisionID)
+            OR
+            (@RoleLevel = 3 AND (e.ManagerID = @EmployeeID OR e.EmployeeID = @EmployeeID))
+            OR
+            (@RoleLevel >= 4 AND e.EmployeeID = @EmployeeID)
+        )
+        AND (@Status IS NULL OR lr.Status = @Status)
+        AND (@StartDate IS NULL OR lr.StartDate >= @StartDate)
+        AND (@EndDate IS NULL OR lr.EndDate <= @EndDate)
+    ORDER BY lr.CreatedAt DESC;
+END;
+GO
+
+-- SP4: Lấy agenda nghỉ phép của phòng ban
+GO
+CREATE PROCEDURE sp_GetDivisionAgenda
+    @DivisionID INT,
+    @StartDate DATE,
+    @EndDate DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        e.EmployeeID,
+        e.EmployeeCode,
+        e.FullName,
+        d.DateValue,
+        CASE 
+            WHEN lr.RequestID IS NOT NULL THEN 'OnLeave'
+            WHEN DATEPART(WEEKDAY, d.DateValue) IN (1, 7) THEN 'Weekend'
+            WHEN h.HolidayID IS NOT NULL THEN 'Holiday'
+            ELSE 'Working'
+        END AS Status,
+        lt.LeaveTypeName,
+        lr.RequestCode
+    FROM Employees e
+    CROSS JOIN (
+        SELECT DATEADD(DAY, number, @StartDate) AS DateValue
+        FROM master..spt_values
+        WHERE type = 'P' 
+            AND DATEADD(DAY, number, @StartDate) <= @EndDate
+    ) d
+    LEFT JOIN LeaveRequests lr ON 
+        e.EmployeeID = lr.EmployeeID
+        AND lr.Status = 'Approved'
+        AND d.DateValue BETWEEN lr.StartDate AND lr.EndDate
+    LEFT JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID
+    LEFT JOIN Holidays h ON d.DateValue = h.HolidayDate
+    WHERE 
+        e.DivisionID = @DivisionID
+        AND e.IsActive = 1
+    ORDER BY e.EmployeeCode, d.DateValue;
+END;
+GO
+
+-- SP5: Lấy thông tin số ngày phép còn lại
+GO
+CREATE PROCEDURE sp_GetLeaveQuota
+    @EmployeeID INT,
+    @Year INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    IF @Year IS NULL
+        SET @Year = YEAR(GETDATE());
+    
+    SELECT 
+        lq.QuotaID,
+        lq.Year,
+        lt.LeaveTypeName,
+        lt.LeaveTypeCode,
+        lq.TotalDays,
+        lq.UsedDays,
+        lq.RemainingDays,
+        lq.CarryOverDays,
+        e.FullName AS EmployeeName,
+        e.EmployeeCode
+    FROM LeaveQuotas lq
+    INNER JOIN LeaveTypes lt ON lq.LeaveTypeID = lt.LeaveTypeID
+    INNER JOIN Employees e ON lq.EmployeeID = e.EmployeeID
+    WHERE 
+        lq.EmployeeID = @EmployeeID
+        AND lq.Year = @Year
+    ORDER BY lt.LeaveTypeCode;
+END;
+GO
+
+-- SP6: Báo cáo thống kê nghỉ phép
+GO
+CREATE PROCEDURE sp_GetLeaveStatistics
+    @DivisionID INT = NULL,
+    @Year INT = NULL,
+    @Month INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    IF @Year IS NULL
+        SET @Year = YEAR(GETDATE());
+    
+    SELECT 
+        d.DivisionName,
+        lt.LeaveTypeName,
+        COUNT(lr.RequestID) AS TotalRequests,
+        SUM(CASE WHEN lr.Status = 'Approved' THEN 1 ELSE 0 END) AS ApprovedRequests,
+        SUM(CASE WHEN lr.Status = 'Rejected' THEN 1 ELSE 0 END) AS RejectedRequests,
+        SUM(CASE WHEN lr.Status = 'InProgress' THEN 1 ELSE 0 END) AS PendingRequests,
+        SUM(CASE WHEN lr.Status = 'Approved' THEN lr.TotalDays ELSE 0 END) AS TotalLeaveDays,
+        AVG(CASE WHEN lr.Status = 'Approved' THEN lr.TotalDays ELSE NULL END) AS AvgLeaveDays
+    FROM LeaveRequests lr
+    INNER JOIN Employees e ON lr.EmployeeID = e.EmployeeID
+    INNER JOIN Divisions d ON e.DivisionID = d.DivisionID
+    INNER JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID
+    WHERE 
+        YEAR(lr.CreatedAt) = @Year
+        AND (@Month IS NULL OR MONTH(lr.CreatedAt) = @Month)
+        AND (@DivisionID IS NULL OR e.DivisionID = @DivisionID)
+    GROUP BY d.DivisionName, lt.LeaveTypeName
+    ORDER BY d.DivisionName, lt.LeaveTypeName;
+END;
+GO
+
+-- SP7: Lấy danh sách templates lý do nghỉ phép
+GO
+CREATE PROCEDURE sp_GetLeaveReasonTemplates
+    @LeaveTypeID INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        t.TemplateID,
+        t.ReasonText,
+        t.Description,
+        t.UsageCount,
+        lt.LeaveTypeID,
+        lt.LeaveTypeName,
+        lt.LeaveTypeCode,
+        lt.AllowCustomReason
+    FROM LeaveReasonTemplates t
+    INNER JOIN LeaveTypes lt ON t.LeaveTypeID = lt.LeaveTypeID
+    WHERE 
+        t.IsActive = 1
+        AND (@LeaveTypeID IS NULL OR t.LeaveTypeID = @LeaveTypeID)
+    ORDER BY lt.LeaveTypeCode, t.UsageCount DESC;
+END;
+GO
+
+-- SP8: Thêm template lý do mới
+GO
+CREATE PROCEDURE sp_AddLeaveReasonTemplate
+    @LeaveTypeID INT,
+    @ReasonText NVARCHAR(500),
+    @Description NVARCHAR(500) = NULL,
+    @CreatedBy INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        IF EXISTS (SELECT 1 FROM LeaveReasonTemplates 
+                   WHERE LeaveTypeID = @LeaveTypeID 
+                   AND ReasonText = @ReasonText 
+                   AND IsActive = 1)
+        BEGIN
+            RAISERROR(N'Template này đã tồn tại!', 16, 1);
+            RETURN;
+        END
+        
+        INSERT INTO LeaveReasonTemplates (LeaveTypeID, ReasonText, Description)
+        VALUES (@LeaveTypeID, @ReasonText, @Description);
+        
+        DECLARE @NewTemplateID INT = SCOPE_IDENTITY();
+        
+        INSERT INTO AuditLogs (TableName, RecordID, Action, EmployeeID, NewValue)
+        VALUES ('LeaveReasonTemplates', @NewTemplateID, 'INSERT', @CreatedBy,
+                CONCAT('LeaveTypeID:', @LeaveTypeID, ', ReasonText:', @ReasonText));
+        
+        COMMIT TRANSACTION;
+        
+        SELECT @NewTemplateID AS TemplateID, 'SUCCESS' AS Status;
+        
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END;
+GO
+
+-- SP9: Cập nhật template lý do
+GO
+CREATE PROCEDURE sp_UpdateLeaveReasonTemplate
+    @TemplateID INT,
+    @ReasonText NVARCHAR(500),
+    @Description NVARCHAR(500) = NULL,
+    @UpdatedBy INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        DECLARE @OldValue NVARCHAR(MAX);
+        SELECT @OldValue = CONCAT('ReasonText:', ReasonText, ', Description:', Description)
+        FROM LeaveReasonTemplates
+        WHERE TemplateID = @TemplateID;
+        
+        UPDATE LeaveReasonTemplates
+        SET ReasonText = @ReasonText,
+            Description = @Description
+        WHERE TemplateID = @TemplateID;
+        
+        INSERT INTO AuditLogs (TableName, RecordID, Action, EmployeeID, OldValue, NewValue)
+        VALUES ('LeaveReasonTemplates', @TemplateID, 'UPDATE', @UpdatedBy,
+                @OldValue,
+                CONCAT('ReasonText:', @ReasonText, ', Description:', @Description));
+        
+        COMMIT TRANSACTION;
+        
+        SELECT 'SUCCESS' AS Status;
+        
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END;
+GO
+
+-- SP10: Xóa template lý do
+GO
+CREATE PROCEDURE sp_DeleteLeaveReasonTemplate
+    @TemplateID INT,
+    @DeletedBy INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        UPDATE LeaveReasonTemplates
+        SET IsActive = 0
+        WHERE TemplateID = @TemplateID;
+        
+        INSERT INTO AuditLogs (TableName, RecordID, Action, EmployeeID, OldValue)
+        VALUES ('LeaveReasonTemplates', @TemplateID, 'DELETE', @DeletedBy,
+                CONCAT('TemplateID:', @TemplateID, ', IsActive:1'));
+        
+        COMMIT TRANSACTION;
+        
+        SELECT 'SUCCESS' AS Status;
+        
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END;
+GO
+
+-- SP11: Lấy top templates được sử dụng nhiều nhất
+GO
+CREATE PROCEDURE sp_GetTopUsedReasonTemplates
+    @LeaveTypeID INT = NULL,
+    @TopCount INT = 10
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT TOP (@TopCount)
+        t.TemplateID,
+        t.ReasonText,
+        t.Description,
+        t.UsageCount,
+        lt.LeaveTypeName,
+        lt.LeaveTypeCode
+    FROM LeaveReasonTemplates t
+    INNER JOIN LeaveTypes lt ON t.LeaveTypeID = lt.LeaveTypeID
+    WHERE 
+        t.IsActive = 1
+        AND (@LeaveTypeID IS NULL OR t.LeaveTypeID = @LeaveTypeID)
+    ORDER BY t.UsageCount DESC;
+END;
+GO
+
+-- =============================================
+-- PHẦN 4: TẠO VIEWS
+-- =============================================
+
+-- View 1: Danh sách đơn với thông tin đầy đủ
+GO
+CREATE VIEW vw_LeaveRequestsFull AS
+SELECT 
+    lr.RequestID,
+    lr.RequestCode,
+    lr.StartDate,
+    lr.EndDate,
+    lr.TotalDays,
+    lr.ReasonTemplateID,
+    lrt.ReasonText AS TemplateReasonText,
+    lr.CustomReason,
+    lr.Reason AS FinalReason,
+    lr.Status,
+    lr.CreatedAt,
+    lr.UpdatedAt,
+    lr.ProcessedDate,
+    lr.ProcessedNote,
+    e.EmployeeID,
+    e.EmployeeCode,
+    e.FullName AS EmployeeName,
+    e.Email AS EmployeeEmail,
+    d.DivisionID,
+    d.DivisionName,
+    lt.LeaveTypeID,
+    lt.LeaveTypeName,
+    lt.LeaveTypeCode,
+    lt.AllowCustomReason,
+    m.EmployeeID AS ManagerID,
+    m.FullName AS ManagerName,
+    m.Email AS ManagerEmail,
+    p.EmployeeID AS ProcessedByID,
+    p.FullName AS ProcessedByName,
+    CASE 
+        WHEN lr.CustomReason IS NOT NULL THEN 'Custom'
+        WHEN lr.ReasonTemplateID IS NOT NULL THEN 'Template'
+        ELSE 'Unknown'
+    END AS ReasonType
+FROM LeaveRequests lr
+INNER JOIN Employees e ON lr.EmployeeID = e.EmployeeID
+INNER JOIN Divisions d ON e.DivisionID = d.DivisionID
+INNER JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID
+LEFT JOIN LeaveReasonTemplates lrt ON lr.ReasonTemplateID = lrt.TemplateID
+LEFT JOIN Employees m ON e.ManagerID = m.EmployeeID
+LEFT JOIN Employees p ON lr.ProcessedBy = p.EmployeeID;
+GO
+
+-- View 2: Thống kê số ngày phép của nhân viên
+GO
+CREATE VIEW vw_EmployeeLeaveBalance AS
+SELECT 
+    e.EmployeeID,
+    e.EmployeeCode,
+    e.FullName,
+    e.Email,
+    d.DivisionName,
+    lt.LeaveTypeName,
+    lq.Year,
+    lq.TotalDays,
+    lq.UsedDays,
+    lq.RemainingDays,
+    lq.CarryOverDays,
+    CASE 
+        WHEN lq.RemainingDays < 0 THEN 'Exceeded'
+        WHEN lq.RemainingDays <= 2 THEN 'Low'
+        ELSE 'Normal'
+    END AS BalanceStatus
+FROM Employees e
+INNER JOIN LeaveQuotas lq ON e.EmployeeID = lq.EmployeeID
+INNER JOIN LeaveTypes lt ON lq.LeaveTypeID = lt.LeaveTypeID
+INNER JOIN Divisions d ON e.DivisionID = d.DivisionID
+WHERE e.IsActive = 1;
+GO
+
+-- View 3: Danh sách đơn chờ xét duyệt
+GO
+CREATE VIEW vw_PendingLeaveRequests AS
+SELECT 
+    lr.RequestID,
+    lr.RequestCode,
+    lr.StartDate,
+    lr.EndDate,
+    lr.TotalDays,
+    lr.Reason AS FinalReason,
+    lr.CustomReason,
+    lr.CreatedAt,
+    e.EmployeeCode,
+    e.FullName AS EmployeeName,
+    d.DivisionName,
+    lt.LeaveTypeName,
+    m.FullName AS ManagerName,
+    m.EmployeeID AS ManagerID,
+    DATEDIFF(DAY, lr.CreatedAt, GETDATE()) AS DaysPending,
+    CASE 
+        WHEN lr.CustomReason IS NOT NULL THEN 'Custom'
+        WHEN lr.ReasonTemplateID IS NOT NULL THEN 'Template'
+        ELSE 'Unknown'
+    END AS ReasonType
+FROM LeaveRequests lr
+INNER JOIN Employees e ON lr.EmployeeID = e.EmployeeID
+INNER JOIN Divisions d ON e.DivisionID = d.DivisionID
+INNER JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID
+LEFT JOIN Employees m ON e.ManagerID = m.EmployeeID
+WHERE lr.Status = 'InProgress';
+GO
+
+-- View 4: Thống kê sử dụng reason templates
+GO
+CREATE VIEW vw_ReasonTemplateStatistics AS
+SELECT 
+    lt.LeaveTypeID,
+    lt.LeaveTypeName,
+    lt.LeaveTypeCode,
+    lrt.TemplateID,
+    lrt.ReasonText,
+    lrt.UsageCount,
+    COUNT(lr.RequestID) AS ActualUsageInRequests,
+    lrt.CreatedAt,
+    CASE 
+        WHEN lrt.UsageCount >= 10 THEN 'Popular'
+        WHEN lrt.UsageCount >= 5 THEN 'Medium'
+        ELSE 'Low'
+    END AS PopularityLevel
+FROM LeaveReasonTemplates lrt
+INNER JOIN LeaveTypes lt ON lrt.LeaveTypeID = lt.LeaveTypeID
+LEFT JOIN LeaveRequests lr ON lrt.TemplateID = lr.ReasonTemplateID
+WHERE lrt.IsActive = 1
+GROUP BY 
+    lt.LeaveTypeID, lt.LeaveTypeName, lt.LeaveTypeCode,
+    lrt.TemplateID, lrt.ReasonText, lrt.UsageCount, lrt.CreatedAt;
+GO
+
+-- =============================================
+-- PHẦN 5: TẠO INDEXES ĐỂ TỐI ƯU HIỆU SUẤT
+-- =============================================
+
+CREATE INDEX IX_Employees_DivisionID ON Employees(DivisionID);
+CREATE INDEX IX_Employees_ManagerID ON Employees(ManagerID);
+CREATE INDEX IX_Employees_Username ON Employees(Username);
+CREATE INDEX IX_Employees_Email ON Employees(Email);
+
+CREATE INDEX IX_LeaveRequests_EmployeeID ON LeaveRequests(EmployeeID);
+CREATE INDEX IX_LeaveRequests_Status ON LeaveRequests(Status);
+CREATE INDEX IX_LeaveRequests_StartDate ON LeaveRequests(StartDate);
+CREATE INDEX IX_LeaveRequests_EndDate ON LeaveRequests(EndDate);
+CREATE INDEX IX_LeaveRequests_ProcessedBy ON LeaveRequests(ProcessedBy);
+CREATE INDEX IX_LeaveRequests_ReasonTemplateID ON LeaveRequests(ReasonTemplateID);
+
+CREATE INDEX IX_LeaveQuotas_EmployeeID_Year ON LeaveQuotas(EmployeeID, Year);
+CREATE INDEX IX_LeaveQuotas_LeaveTypeID ON LeaveQuotas(LeaveTypeID);
+
+CREATE INDEX IX_EmployeeRoles_EmployeeID ON EmployeeRoles(EmployeeID);
+CREATE INDEX IX_EmployeeRoles_RoleID ON EmployeeRoles(RoleID);
+
+CREATE INDEX IX_LeaveReasonTemplates_LeaveTypeID ON LeaveReasonTemplates(LeaveTypeID);
+CREATE INDEX IX_LeaveReasonTemplates_IsActive ON LeaveReasonTemplates(IsActive);
+CREATE INDEX IX_LeaveReasonTemplates_UsageCount ON LeaveReasonTemplates(UsageCount DESC);
+
+CREATE INDEX IX_AuditLogs_TableName ON AuditLogs(TableName);
+CREATE INDEX IX_AuditLogs_EmployeeID ON AuditLogs(EmployeeID);
+CREATE INDEX IX_AuditLogs_CreatedAt ON AuditLogs(CreatedAt);
+
+CREATE INDEX IX_Notifications_EmployeeID ON Notifications(EmployeeID);
+CREATE INDEX IX_Notifications_IsRead ON Notifications(IsRead);
+
+GO
+
+-- =============================================
+-- KẾT THÚC - HIỂN THỊ THÔNG TIN
+-- =============================================
+
+PRINT N'';
+PRINT N'=================================================';
+PRINT N'  HỆ THỐNG QUẢN LÝ NGHỈ PHÉP NHÂN VIÊN';
+PRINT N'  Database: LeaveManagementSystem';
+PRINT N'  ĐÃ ĐƯỢC TẠO THÀNH CÔNG!';
+PRINT N'=================================================';
+PRINT N'';
+PRINT N'📊 THỐNG KÊ:';
+PRINT N'  ✓ 14 Bảng dữ liệu';
+PRINT N'  ✓ 7 Phòng ban';
+PRINT N'  ✓ 7 Vai trò phân quyền';
+PRINT N'  ✓ 13 Tính năng hệ thống';
+PRINT N'  ✓ 19 Nhân viên mẫu';
+PRINT N'  ✓ 8 Loại nghỉ phép';
+PRINT N'  ✓ 20 Mẫu lý do nghỉ phép (templates)';
+PRINT N'  ✓ 11 Stored Procedures';
+PRINT N'  ✓ 4 Views';
+PRINT N'  ✓ 15 Indexes';
+PRINT N'';
+PRINT N'=================================================';
+PRINT N'🎯 TÍNH NĂNG CHÍNH:';
+PRINT N'=================================================';
+PRINT N'';
+PRINT N'1. QUẢN LÝ TỔ CHỨC';
+PRINT N'   • Phân cấp phòng ban và nhân viên';
+PRINT N'   • Phân quyền RBAC (Role-Based Access Control)';
+PRINT N'   • Ma trận quyền hạn chi tiết (CRUD)';
+PRINT N'';
+PRINT N'2. QUẢN LÝ NGHỈ PHÉP';
+PRINT N'   • Tạo đơn nghỉ phép với 3 cách nhập lý do:';
+PRINT N'     - Chọn từ template có sẵn';
+PRINT N'     - Tự nhập lý do tùy chỉnh';
+PRINT N'     - Kết hợp template + custom';
+PRINT N'   • State machine: InProgress → Approved/Rejected';
+PRINT N'   • Tự động tính ngày làm việc (không tính T7, CN)';
+PRINT N'   • Quản lý quota ngày phép còn lại';
+PRINT N'';
+PRINT N'3. AUDIT & TRACKING';
+PRINT N'   • Audit logs đầy đủ mọi thao tác';
+PRINT N'   • Lịch sử trạng thái đơn';
+PRINT N'   • Hệ thống thông báo tự động';
+PRINT N'';
+PRINT N'4. BÁO CÁO & THỐNG KÊ';
+PRINT N'   • Agenda phòng ban (timeline)';
+PRINT N'   • Thống kê ngày phép';
+PRINT N'   • Báo cáo sử dụng templates';
+PRINT N'';
+PRINT N'=================================================';
+PRINT N'📝 STORED PROCEDURES:';
+PRINT N'=================================================';
+PRINT N'';
+PRINT N'SP1: sp_CreateLeaveRequest';
+PRINT N'     → Tạo đơn nghỉ phép (hỗ trợ template/custom reason)';
+PRINT N'';
+PRINT N'SP2: sp_ProcessLeaveRequest';
+PRINT N'     → Xét duyệt/từ chối đơn nghỉ phép';
+PRINT N'';
+PRINT N'SP3: sp_GetLeaveRequests';
+PRINT N'     → Lấy danh sách đơn theo phân quyền';
+PRINT N'';
+PRINT N'SP4: sp_GetDivisionAgenda';
+PRINT N'     → Xem lịch nghỉ phép của phòng ban';
+PRINT N'';
+PRINT N'SP5: sp_GetLeaveQuota';
+PRINT N'     → Xem số ngày phép còn lại';
+PRINT N'';
+PRINT N'SP6: sp_GetLeaveStatistics';
+PRINT N'     → Báo cáo thống kê tổng quan';
+PRINT N'';
+PRINT N'SP7: sp_GetLeaveReasonTemplates';
+PRINT N'     → Lấy danh sách templates theo loại';
+PRINT N'';
+PRINT N'SP8: sp_AddLeaveReasonTemplate';
+PRINT N'     → Thêm template lý do mới';
+PRINT N'';
+PRINT N'SP9: sp_UpdateLeaveReasonTemplate';
+PRINT N'     → Cập nhật template';
+PRINT N'';
+PRINT N'SP10: sp_DeleteLeaveReasonTemplate';
+PRINT N'      → Xóa template (soft delete)';
+PRINT N'';
+PRINT N'SP11: sp_GetTopUsedReasonTemplates';
+PRINT N'      → Lấy top templates phổ biến nhất';
+PRINT N'';
+PRINT N'=================================================';
+PRINT N'💡 VÍ DỤ SỬ DỤNG:';
+PRINT N'=================================================';
+PRINT N'';
+PRINT N'-- 1. Tạo đơn với template có sẵn:';
+PRINT N'EXEC sp_CreateLeaveRequest';
+PRINT N'    @EmployeeID = 5,';
+PRINT N'    @LeaveTypeID = 1,';
+PRINT N'    @StartDate = ''2025-05-01'',';
+PRINT N'    @EndDate = ''2025-05-03'',';
+PRINT N'    @ReasonTemplateID = 1;';
+PRINT N'';
+PRINT N'-- 2. Tạo đơn với lý do tùy chỉnh:';
+PRINT N'EXEC sp_CreateLeaveRequest';
+PRINT N'    @EmployeeID = 5,';
+PRINT N'    @LeaveTypeID = 1,';
+PRINT N'    @StartDate = ''2025-05-01'',';
+PRINT N'    @EndDate = ''2025-05-03'',';
+PRINT N'    @CustomReason = N''Tham dự hội nghị ở Hà Nội'';';
+PRINT N'';
+PRINT N'-- 3. Kết hợp template + custom:';
+PRINT N'EXEC sp_CreateLeaveRequest';
+PRINT N'    @EmployeeID = 5,';
+PRINT N'    @LeaveTypeID = 1,';
+PRINT N'    @StartDate = ''2025-05-01'',';
+PRINT N'    @EndDate = ''2025-05-03'',';
+PRINT N'    @ReasonTemplateID = 2,';
+PRINT N'    @CustomReason = N''tại Phú Quốc'';';
+PRINT N'-- Kết quả: "Nghỉ phép du lịch nghỉ dưỡng tại Phú Quốc"';
+PRINT N'';
+PRINT N'-- 4. Xét duyệt đơn:';
+PRINT N'EXEC sp_ProcessLeaveRequest';
+PRINT N'    @RequestID = 1,';
+PRINT N'    @ProcessedBy = 2,';
+PRINT N'    @Action = ''APPROVE'',';
+PRINT N'    @ProcessedNote = N''Đồng ý cho nghỉ'';';
+PRINT N'';
+PRINT N'-- 5. Xem danh sách đơn:';
+PRINT N'EXEC sp_GetLeaveRequests';
+PRINT N'    @EmployeeID = 2,';
+PRINT N'    @Status = ''InProgress'';';
+PRINT N'';
+PRINT N'-- 6. Xem agenda phòng IT (từ 1/1 đến 31/1):';
+PRINT N'EXEC sp_GetDivisionAgenda';
+PRINT N'    @DivisionID = 1,';
+PRINT N'    @StartDate = ''2025-01-01'',';
+PRINT N'    @EndDate = ''2025-01-31'';';
+PRINT N'';
+PRINT N'-- 7. Xem số ngày phép còn lại:';
+PRINT N'EXEC sp_GetLeaveQuota';
+PRINT N'    @EmployeeID = 5,';
+PRINT N'    @Year = 2025;';
+PRINT N'';
+PRINT N'-- 8. Xem templates:';
+PRINT N'EXEC sp_GetLeaveReasonTemplates @LeaveTypeID = 1;';
+PRINT N'';
+PRINT N'-- 9. Xem top templates được dùng nhiều:';
+PRINT N'EXEC sp_GetTopUsedReasonTemplates @TopCount = 5;';
+PRINT N'';
+PRINT N'-- 10. Thống kê nghỉ phép:';
+PRINT N'EXEC sp_GetLeaveStatistics';
+PRINT N'    @Year = 2025,';
+PRINT N'    @Month = 1;';
+PRINT N'';
+PRINT N'=================================================';
+PRINT N'📋 VIEWS CÓ SẴN:';
+PRINT N'=================================================';
+PRINT N'';
+PRINT N'1. vw_LeaveRequestsFull';
+PRINT N'   → Xem tất cả đơn với thông tin chi tiết';
+PRINT N'';
+PRINT N'2. vw_EmployeeLeaveBalance';
+PRINT N'   → Xem số dư ngày phép của nhân viên';
+PRINT N'';
+PRINT N'3. vw_PendingLeaveRequests';
+PRINT N'   → Xem các đơn đang chờ xét duyệt';
+PRINT N'';
+PRINT N'4. vw_ReasonTemplateStatistics';
+PRINT N'   → Thống kê sử dụng templates';
+PRINT N'';
+PRINT N'-- Ví dụ query views:';
+PRINT N'SELECT * FROM vw_LeaveRequestsFull WHERE Status = ''InProgress'';';
+PRINT N'SELECT * FROM vw_EmployeeLeaveBalance WHERE BalanceStatus = ''Low'';';
+PRINT N'SELECT * FROM vw_PendingLeaveRequests WHERE DaysPending > 3;';
+PRINT N'';
+PRINT N'=================================================';
+PRINT N'🔐 THÔNG TIN ĐĂNG NHẬP MẪU:';
+PRINT N'=================================================';
+PRINT N'';
+PRINT N'Username: ceo.nguyen     | Role: CEO';
+PRINT N'Username: mr.a           | Role: Trưởng Phòng IT';
+PRINT N'Username: mr.b           | Role: Trưởng Nhóm IT';
+PRINT N'Username: mr.f           | Role: Nhân Viên IT';
+PRINT N'Username: hr.manager     | Role: HR Manager';
+PRINT N'Username: sale.manager   | Role: Trưởng Phòng Sales';
+PRINT N'';
+PRINT N'Password: hashed_password_here (cần implement hash)';
+PRINT N'';
+PRINT N'=================================================';
+PRINT N'⚠️  LƯU Ý QUAN TRỌNG:';
+PRINT N'=================================================';
+PRINT N'';
+PRINT N'1. Cần implement password hashing (bcrypt/SHA256)';
+PRINT N'   trước khi deploy production';
+PRINT N'';
+PRINT N'2. Cấu hình email notification trong SystemSettings';
+PRINT N'';
+PRINT N'3. Backup database định kỳ';
+PRINT N'';
+PRINT N'4. Review và adjust các constraints theo';
+PRINT N'   chính sách công ty';
+PRINT N'';
+PRINT N'5. Một số loại nghỉ phép KHÔNG cho phép custom:';
+PRINT N'   - Nghỉ cưới (MARRIAGE)';
+PRINT N'   - Nghỉ thai sản (MATERNITY)';
+PRINT N'   - Nghỉ con nhỏ (PATERNITY)';
+PRINT N'';
+PRINT N'=================================================';
+PRINT N'✅ CÀI ĐẶT HOÀN TẤT!';
+PRINT N'=================================================';
+PRINT N'';
+PRINT N'Bạn có thể bắt đầu sử dụng hệ thống ngay bây giờ!';
+PRINT N'';
+PRINT N'Để kiểm tra cài đặt, chạy:';
+PRINT N'SELECT * FROM Divisions;';
+PRINT N'SELECT * FROM Employees;';
+PRINT N'SELECT * FROM LeaveTypes;';
+PRINT N'SELECT * FROM LeaveReasonTemplates;';
+PRINT N'';
+PRINT N'=================================================';
+GO
