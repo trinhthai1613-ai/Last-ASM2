@@ -32,7 +32,7 @@ public class AgendaServlet extends HttpServlet {
         
         try {
             // Get approved leave requests for calendar view
-            List<LeaveRequest> approvedRequests = leaveRequestDAO.getApprovedLeavesByEmployee(user.getEmployeeId());
+            List<LeaveRequest> approvedRequests = leaveRequestDAO.getApprovedLeavesByEmployee(user.getEmployeeID());
             request.setAttribute("leaveRequests", approvedRequests);
             
         } catch (Exception e) {
