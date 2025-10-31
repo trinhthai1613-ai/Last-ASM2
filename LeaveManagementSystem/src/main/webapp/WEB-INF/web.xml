@@ -17,7 +17,7 @@
         <servlet-name>LoginServlet</servlet-name>
         <url-pattern>/login</url-pattern>
     </servlet-mapping>
-    
+
     <servlet>
         <servlet-name>RegisterServlet</servlet-name>
         <servlet-class>com.company.lms.controller.RegisterServlet</servlet-class>
