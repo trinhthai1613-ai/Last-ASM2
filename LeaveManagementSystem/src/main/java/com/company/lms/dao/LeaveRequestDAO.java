@@ -131,13 +131,30 @@ public class LeaveRequestDAO {
         }
     }
     
+    /**
+     * Extract LeaveRequest từ ResultSet
+     * QUAN TRỌNG: Wrap các cột trong try-catch để tránh lỗi khi cột không tồn tại
+     */
     private LeaveRequest extractLeaveRequestFromResultSet(ResultSet rs) throws SQLException {
         LeaveRequest request = new LeaveRequest();
         
+        // Các cột BẮT BUỘC
         request.setRequestID(rs.getInt("RequestID"));
         request.setRequestCode(rs.getString("RequestCode"));
-        request.setEmployeeID(rs.getInt("EmployeeID"));
-        request.setLeaveTypeID(rs.getInt("LeaveTypeID"));
+        
+        // EmployeeID - có thể không có trong một số query
+        try {
+            request.setEmployeeID(rs.getInt("EmployeeID"));
+        } catch (SQLException e) {
+            // Column might not exist
+        }
+        
+        // LeaveTypeID - có thể không có trong một số query
+        try {
+            request.setLeaveTypeID(rs.getInt("LeaveTypeID"));
+        } catch (SQLException e) {
+            // Column might not exist
+        }
         
         if (rs.getDate("StartDate") != null) {
             request.setStartDate(rs.getDate("StartDate").toLocalDate());
@@ -149,31 +166,59 @@ public class LeaveRequestDAO {
         
         request.setTotalDays(rs.getBigDecimal("TotalDays"));
         
-        int templateID = rs.getInt("ReasonTemplateID");
-        if (!rs.wasNull()) {
-            request.setReasonTemplateID(templateID);
+        // ReasonTemplateID - có thể không có
+        try {
+            int templateID = rs.getInt("ReasonTemplateID");
+            if (!rs.wasNull()) {
+                request.setReasonTemplateID(templateID);
+            }
+        } catch (SQLException e) {
+            // Column might not exist
         }
         
-        request.setCustomReason(rs.getString("CustomReason"));
+        // CustomReason - có thể không có
+        try {
+            request.setCustomReason(rs.getString("CustomReason"));
+        } catch (SQLException e) {
+            // Column might not exist
+        }
+        
         request.setReason(rs.getString("Reason"));
         request.setStatus(rs.getString("Status"));
         
-        int processedBy = rs.getInt("ProcessedBy");
-        if (!rs.wasNull()) {
-            request.setProcessedBy(processedBy);
+        // ProcessedBy - có thể không có
+        try {
+            int processedBy = rs.getInt("ProcessedBy");
+            if (!rs.wasNull()) {
+                request.setProcessedBy(processedBy);
+            }
+        } catch (SQLException e) {
+            // Column might not exist
         }
         
         if (rs.getTimestamp("ProcessedDate") != null) {
             request.setProcessedDate(rs.getTimestamp("ProcessedDate").toLocalDateTime());
         }
         
-        request.setProcessedNote(rs.getString("ProcessedNote"));
-        request.setAttachmentPath(rs.getString("AttachmentPath"));
+        // ProcessedNote - có thể không có
+        try {
+            request.setProcessedNote(rs.getString("ProcessedNote"));
+        } catch (SQLException e) {
+            // Column might not exist
+        }
+        
+        // AttachmentPath - có thể không có
+        try {
+            request.setAttachmentPath(rs.getString("AttachmentPath"));
+        } catch (SQLException e) {
+            // Column might not exist
+        }
         
         if (rs.getTimestamp("CreatedAt") != null) {
             request.setCreatedAt(rs.getTimestamp("CreatedAt").toLocalDateTime());
         }
         
+        // Các cột JOIN - có thể không có
         try {
             request.setEmployeeName(rs.getString("EmployeeName"));
             request.setLeaveTypeName(rs.getString("LeaveTypeName"));
