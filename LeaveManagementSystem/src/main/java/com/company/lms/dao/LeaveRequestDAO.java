@@ -382,4 +382,26 @@ public List<LeaveRequest> getAllApprovedLeavesByDateRange(
     
     return requests;
 }
+public int countLeaveRequestsByStatus(int employeeID, String status) {
+    String sql = "SELECT COUNT(*) as Total " +
+                "FROM LeaveRequests " +
+                "WHERE EmployeeID = ? AND Status = ?";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        stmt.setInt(1, employeeID);
+        stmt.setString(2, status);
+        
+        ResultSet rs = stmt.executeQuery();
+        if (rs.next()) {
+            return rs.getInt("Total");
+        }
+        
+    } catch (SQLException e) {
+        logger.error("Error counting leave requests by status", e);
+    }
+    
+    return 0;
+}
 }
