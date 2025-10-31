@@ -57,7 +57,8 @@ public class ProfileUpdateServlet extends HttpServlet {
             // Handle avatar upload if present
             Part filePart = request.getPart("avatar");
             if (filePart != null && filePart.getSize() > 0) {
-                String fileName = FileUploadUtil.uploadFile(filePart, getServletContext().getRealPath("/images/uploads"));
+                String uploadPath = getServletContext().getRealPath("/images/uploads");
+                String fileName = FileUploadUtil.uploadAvatar(filePart, uploadPath);
                 if (fileName != null) {
                     user.setAvatarPath(fileName);
                 }

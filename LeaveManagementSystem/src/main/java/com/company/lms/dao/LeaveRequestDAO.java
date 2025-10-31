@@ -190,7 +190,7 @@ public class LeaveRequestDAO {
         
         return requests;
     }
-    
+   
     private LeaveRequest extractLeaveRequestFromResultSet(ResultSet rs) throws SQLException {
         LeaveRequest request = new LeaveRequest();
         
@@ -285,4 +285,101 @@ public class LeaveRequestDAO {
         
         return request;
     }
+    public List<LeaveRequest> getApprovedLeavesByDivisionAndDateRange(
+        int divisionID, LocalDate startDate, LocalDate endDate) {
+    List<LeaveRequest> requests = new ArrayList<>();
+    
+    String sql = "SELECT lr.*, e.FullName as EmployeeName, lt.LeaveTypeName " +
+                "FROM LeaveRequests lr " +
+                "INNER JOIN Employees e ON lr.EmployeeID = e.EmployeeID " +
+                "LEFT JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID " +
+                "WHERE e.DivisionID = ? " +
+                "  AND lr.Status = 'Approved' " +
+                "  AND e.IsActive = 1 " +
+                "  AND (" +
+                "    (lr.StartDate >= ? AND lr.StartDate <= ?) " +  // Starts in range
+                "    OR (lr.EndDate >= ? AND lr.EndDate <= ?) " +    // Ends in range
+                "    OR (lr.StartDate <= ? AND lr.EndDate >= ?)" +   // Spans entire range
+                "  ) " +
+                "ORDER BY e.FullName, lr.StartDate";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        stmt.setInt(1, divisionID);
+        stmt.setDate(2, Date.valueOf(startDate));
+        stmt.setDate(3, Date.valueOf(endDate));
+        stmt.setDate(4, Date.valueOf(startDate));
+        stmt.setDate(5, Date.valueOf(endDate));
+        stmt.setDate(6, Date.valueOf(startDate));
+        stmt.setDate(7, Date.valueOf(endDate));
+        
+        ResultSet rs = stmt.executeQuery();
+        
+        while (rs.next()) {
+            requests.add(extractLeaveRequestFromResultSet(rs));
+        }
+        
+        logger.info("Found {} approved leaves for division {} between {} and {}", 
+                   requests.size(), divisionID, startDate, endDate);
+        
+    } catch (SQLException e) {
+        logger.error("Error getting approved leaves by division and date range", e);
+    }
+    
+    return requests;
+}
+
+/**
+ * Lấy tất cả đơn nghỉ phép đã được duyệt của TẤT CẢ phòng ban trong khoảng thời gian
+ * Dùng khi muốn xem toàn công ty (CEO, HR)
+ * 
+ * @param startDate Ngày bắt đầu
+ * @param endDate Ngày kết thúc
+ * @return List các đơn nghỉ phép đã approved
+ */
+public List<LeaveRequest> getAllApprovedLeavesByDateRange(
+        LocalDate startDate, LocalDate endDate) {
+    List<LeaveRequest> requests = new ArrayList<>();
+    
+    String sql = "SELECT lr.*, e.FullName as EmployeeName, e.DivisionID, " +
+                "       lt.LeaveTypeName, d.DivisionName " +
+                "FROM LeaveRequests lr " +
+                "INNER JOIN Employees e ON lr.EmployeeID = e.EmployeeID " +
+                "LEFT JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID " +
+                "LEFT JOIN Divisions d ON e.DivisionID = d.DivisionID " +
+                "WHERE lr.Status = 'Approved' " +
+                "  AND e.IsActive = 1 " +
+                "  AND (" +
+                "    (lr.StartDate >= ? AND lr.StartDate <= ?) " +
+                "    OR (lr.EndDate >= ? AND lr.EndDate <= ?) " +
+                "    OR (lr.StartDate <= ? AND lr.EndDate >= ?)" +
+                "  ) " +
+                "ORDER BY d.DivisionName, e.FullName, lr.StartDate";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        stmt.setDate(1, Date.valueOf(startDate));
+        stmt.setDate(2, Date.valueOf(endDate));
+        stmt.setDate(3, Date.valueOf(startDate));
+        stmt.setDate(4, Date.valueOf(endDate));
+        stmt.setDate(5, Date.valueOf(startDate));
+        stmt.setDate(6, Date.valueOf(endDate));
+        
+        ResultSet rs = stmt.executeQuery();
+        
+        while (rs.next()) {
+            requests.add(extractLeaveRequestFromResultSet(rs));
+        }
+        
+        logger.info("Found {} approved leaves between {} and {}", 
+                   requests.size(), startDate, endDate);
+        
+    } catch (SQLException e) {
+        logger.error("Error getting all approved leaves by date range", e);
+    }
+    
+    return requests;
+}
 }

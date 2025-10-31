@@ -89,26 +89,138 @@ public class EmployeeDAO {
 }
     
     public boolean register(Employee employee) {
-        String sql = "{CALL sp_RegisterEmployee(?, ?, ?, ?)}";
+    // Tạo EmployeeCode tự động
+    String employeeCode = generateEmployeeCode();
+    
+    String sql = "INSERT INTO Employees " +
+                "(EmployeeCode, Username, PasswordHash, Email, FullName, " +
+                "PhoneNumber, Gender, DateOfBirth, DivisionID, HireDate, IsActive) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), 1)";
+    
+    Connection conn = null;
+    PreparedStatement stmt = null;
+    
+    try {
+        conn = DatabaseConnection.getConnection();
+        conn.setAutoCommit(false); // Bắt đầu transaction
         
-        try (Connection conn = DatabaseConnection.getConnection();
-             CallableStatement stmt = conn.prepareCall(sql)) {
+        stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        
+        stmt.setString(1, employeeCode);
+        stmt.setString(2, employee.getUsername());
+        stmt.setString(3, hashPassword(employee.getPassword())); // Hash password
+        stmt.setString(4, employee.getEmail());
+        stmt.setString(5, employee.getFullName());
+        
+        // Optional fields
+        if (employee.getPhoneNumber() != null && !employee.getPhoneNumber().isEmpty()) {
+            stmt.setString(6, employee.getPhoneNumber());
+        } else {
+            stmt.setNull(6, Types.VARCHAR);
+        }
+        
+        if (employee.getGender() != null && !employee.getGender().isEmpty()) {
+            stmt.setString(7, employee.getGender());
+        } else {
+            stmt.setNull(7, Types.VARCHAR);
+        }
+        
+        if (employee.getDateOfBirth() != null) {
+            stmt.setDate(8, Date.valueOf(employee.getDateOfBirth()));
+        } else {
+            stmt.setNull(8, Types.DATE);
+        }
+        
+        // DivisionID - default to 1 if not set
+        stmt.setInt(9, employee.getDivisionID() > 0 ? employee.getDivisionID() : 1);
+        
+        int rowsAffected = stmt.executeUpdate();
+        
+        if (rowsAffected > 0) {
+            // Lấy EmployeeID vừa tạo
+            ResultSet rs = stmt.getGeneratedKeys();
+            if (rs.next()) {
+                int newEmployeeId = rs.getInt(1);
+                employee.setEmployeeID(newEmployeeId);
+                
+                // Gán role mặc định: EMPLOYEE (RoleID = 4)
+                String roleSQL = "INSERT INTO EmployeeRoles (EmployeeID, RoleID) VALUES (?, 4)";
+                try (PreparedStatement roleStmt = conn.prepareStatement(roleSQL)) {
+                    roleStmt.setInt(1, newEmployeeId);
+                    roleStmt.executeUpdate();
+                }
+                
+                // Tạo quota nghỉ phép cho năm hiện tại
+                createDefaultLeaveQuotas(conn, newEmployeeId);
+            }
             
-            stmt.setString(1, employee.getUsername());
-            // Hash password trước khi lưu vào DB
-            stmt.setString(2, hashPassword(employee.getPassword()));
-            stmt.setString(3, employee.getEmail());
-            stmt.setString(4, employee.getFullName());
-            
-            stmt.execute();
-            logger.info("Employee registered successfully: {}", employee.getUsername());
+            conn.commit(); // Commit transaction
+            logger.info("Employee registered successfully: {} (ID: {})", 
+                       employee.getUsername(), employee.getEmployeeID());
             return true;
-            
+        }
+        
+        conn.rollback();
+        return false;
+        
+    } catch (SQLException e) {
+        logger.error("Error during registration", e);
+        if (conn != null) {
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                logger.error("Error rolling back transaction", ex);
+            }
+        }
+        return false;
+    } finally {
+        try {
+            if (stmt != null) stmt.close();
+            if (conn != null) {
+                conn.setAutoCommit(true);
+                conn.close();
+            }
         } catch (SQLException e) {
-            logger.error("Error during registration", e);
-            return false;
+            logger.error("Error closing resources", e);
         }
     }
+}
+
+/**
+
+ */
+private String generateEmployeeCode() {
+    String sql = "SELECT COUNT(*) + 1 as NextNumber FROM Employees";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         Statement stmt = conn.createStatement();
+         ResultSet rs = stmt.executeQuery(sql)) {
+        
+        if (rs.next()) {
+            int nextNum = rs.getInt("NextNumber");
+            return String.format("EMP%04d", nextNum);
+        }
+        
+    } catch (SQLException e) {
+        logger.error("Error generating employee code", e);
+    }
+    
+    // Fallback
+    return "EMP" + System.currentTimeMillis();
+}
+
+private void createDefaultLeaveQuotas(Connection conn, int employeeId) throws SQLException {
+    String sql = "INSERT INTO LeaveQuotas (EmployeeID, LeaveTypeID, Year, TotalDays, UsedDays, RemainingDays) " +
+                "SELECT ?, LeaveTypeID, YEAR(GETDATE()), DefaultDaysPerYear, 0, DefaultDaysPerYear " +
+                "FROM LeaveTypes " +
+                "WHERE LeaveTypeCode IN ('ANNUAL', 'SICK') AND IsActive = 1";
+    
+    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, employeeId);
+        int quotasCreated = stmt.executeUpdate();
+        logger.info("Created {} leave quotas for employee {}", quotasCreated, employeeId);
+    }
+}
     
     public boolean isUsernameExists(String username) {
         String sql = "SELECT COUNT(*) FROM Employees WHERE Username = ?";
@@ -223,6 +335,31 @@ public class EmployeeDAO {
         return employees;
     }
     
+    public List<Employee> getEmployeesByDivision(int divisionID) {
+        List<Employee> employees = new ArrayList<>();
+        String sql = "SELECT e.*, d.DivisionName " +
+                    "FROM Employees e " +
+                    "LEFT JOIN Divisions d ON e.DivisionID = d.DivisionID " +
+                    "WHERE e.DivisionID = ? AND e.IsActive = 1 " +
+                    "ORDER BY e.FullName";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, divisionID);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                employees.add(extractEmployeeFromResultSet(rs));
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error getting employees by division", e);
+        }
+        
+        return employees;
+    }
+    
     private void updateLastLogin(int employeeID) {
         String sql = "UPDATE Employees SET LastLogin = GETDATE() WHERE EmployeeID = ?";
         
@@ -258,7 +395,7 @@ public class EmployeeDAO {
     public boolean updateEmployee(Employee employee) {
         String sql = "UPDATE Employees SET " +
                     "FullName = ?, Email = ?, PhoneNumber = ?, " +
-                    "Gender = ?, DateOfBirth = ?, UpdatedAt = GETDATE() " +
+                    "Gender = ?, DateOfBirth = ?, AvatarPath = ?, UpdatedAt = GETDATE() " +
                     "WHERE EmployeeID = ?";
         
         try (Connection conn = DatabaseConnection.getConnection();
@@ -275,7 +412,13 @@ public class EmployeeDAO {
                 stmt.setNull(5, Types.DATE);
             }
             
-            stmt.setInt(6, employee.getEmployeeID());
+            if (employee.getAvatarPath() != null) {
+                stmt.setString(6, employee.getAvatarPath());
+            } else {
+                stmt.setNull(6, Types.VARCHAR);
+            }
+            
+            stmt.setInt(7, employee.getEmployeeID());
             
             int updated = stmt.executeUpdate();
             return updated > 0;

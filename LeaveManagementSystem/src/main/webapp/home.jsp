@@ -324,10 +324,7 @@
             </div>
             
             <div class="nav-menu">
-                <a href="${pageContext.request.contextPath}/home"><i class="fas fa-home"></i> Trang chủ</a>
-                <a href="${pageContext.request.contextPath}/request/create"><i class="fas fa-plus-circle"></i> Tạo đơn</a>
-                <a href="${pageContext.request.contextPath}/request/list"><i class="fas fa-list"></i> Đơn của tôi</a>
-                <a href="${pageContext.request.contextPath}/request/pending"><i class="fas fa-tasks"></i> Duyệt đơn</a>
+
             </div>
             
             <div class="user-menu">

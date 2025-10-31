@@ -69,41 +69,54 @@ public class CreateLeaveRequestServlet extends HttpServlet {
                 return;
             }
             
-            // Xử lý khi người dùng chọn "Khác"
+            // Xử lý logic tạo đơn nghỉ phép
             int leaveTypeID;
+            String finalReason = null; // Lý do cuối cùng để lưu vào DB
+            
             if ("other".equals(leaveTypeParam)) {
-                // Validate: khi chọn "Khác" thì BẮT BUỘC phải có customReason
+                // KHI CHỌN "KHÁC": BẮT BUỘC phải nhập lý do tùy chỉnh
                 if (customReason == null || customReason.trim().isEmpty()) {
                     request.setAttribute("error", "Vui lòng nhập lý do khi chọn loại nghỉ 'Khác'!");
                     doGet(request, response);
                     return;
                 }
                 
-                // Tìm hoặc tạo LeaveType "OTHER" trong database
-                // Giả sử có sẵn LeaveType với code "OTHER" trong DB
+                // Tìm LeaveType "OTHER" trong database
                 LeaveType otherType = leaveTypeDAO.getLeaveTypeByCode("OTHER");
                 if (otherType != null) {
                     leaveTypeID = otherType.getLeaveTypeID();
+                    finalReason = customReason.trim(); // Sử dụng lý do người dùng nhập
                 } else {
-                    // Nếu không có, sử dụng loại mặc định (ví dụ: Annual Leave)
-                    // Hoặc có thể throw exception yêu cầu admin thêm loại "OTHER" vào DB
                     request.setAttribute("error", "Loại nghỉ 'Khác' chưa được cấu hình trong hệ thống. Vui lòng liên hệ quản trị viên!");
                     doGet(request, response);
                     return;
                 }
             } else {
+                // KHI CHỌN CÁC LOẠI NGHỈ PHÉP TEMPLATE
                 leaveTypeID = Integer.parseInt(leaveTypeParam);
                 
-                // Validate: check xem loại nghỉ này có cho phép custom reason không
+                // Lấy thông tin loại nghỉ phép đã chọn
                 LeaveType selectedType = leaveTypeDAO.getLeaveTypeById(leaveTypeID);
-                if (selectedType != null && !selectedType.isAllowCustomReason()) {
-                    // Nếu không cho phép custom reason nhưng user vẫn gửi lên, clear nó
-                    customReason = null;
+                if (selectedType == null) {
+                    request.setAttribute("error", "Loại nghỉ phép không hợp lệ!");
+                    doGet(request, response);
+                    return;
+                }
+                
+                // **FIX CHÍNH**: Tự động lấy tên loại nghỉ phép làm reason
+                // Điều này đảm bảo stored procedure luôn nhận được giá trị @CustomReason
+                finalReason = selectedType.getLeaveTypeName();
+                
+                // Nếu loại nghỉ phép cho phép custom reason và user có nhập thêm
+                if (selectedType.isAllowCustomReason() && 
+                    customReason != null && !customReason.trim().isEmpty()) {
+                    // Kết hợp: tên loại + lý do tùy chỉnh
+                    finalReason = selectedType.getLeaveTypeName() + " - " + customReason.trim();
                 }
             }
             
             // Validate: customReason không được quá dài
-            if (customReason != null && customReason.length() > 1000) {
+            if (finalReason != null && finalReason.length() > 1000) {
                 request.setAttribute("error", "Lý do không được vượt quá 1000 ký tự!");
                 doGet(request, response);
                 return;
@@ -116,16 +129,13 @@ public class CreateLeaveRequestServlet extends HttpServlet {
             leaveRequest.setStartDate(startDate);
             leaveRequest.setEndDate(endDate);
             
-            // Set customReason - đảm bảo không null nếu không có giá trị
-            if (customReason != null && !customReason.trim().isEmpty()) {
-                leaveRequest.setCustomReason(customReason.trim());
-            } else {
-                leaveRequest.setCustomReason(null);
-            }
+            // Set customReason với giá trị finalReason (luôn có giá trị)
+            // Điều này đảm bảo stored procedure nhận được @CustomReason không phải NULL
+            leaveRequest.setCustomReason(finalReason);
             
             // Log để debug
             logger.info("Creating leave request: EmployeeID={}, LeaveTypeID={}, StartDate={}, EndDate={}, CustomReason={}", 
-                       user.getEmployeeID(), leaveTypeID, startDate, endDate, customReason);
+                       user.getEmployeeID(), leaveTypeID, startDate, endDate, finalReason);
             
             // Tạo đơn nghỉ phép
             if (leaveRequestDAO.createLeaveRequest(leaveRequest)) {
