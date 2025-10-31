@@ -10,7 +10,7 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet("/request/list")
+
 public class ListLeaveRequestServlet extends HttpServlet {
     private LeaveRequestDAO leaveRequestDAO;
     

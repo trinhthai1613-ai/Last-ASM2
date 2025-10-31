@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
-@WebServlet("/request/create")
+
 public class CreateLeaveRequestServlet extends HttpServlet {
     private static final Logger logger = LoggerFactory.getLogger(CreateLeaveRequestServlet.class);
     private LeaveRequestDAO leaveRequestDAO;

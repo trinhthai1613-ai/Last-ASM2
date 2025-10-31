@@ -3,16 +3,12 @@ package com.company.lms.controller;
 import com.company.lms.dao.EmployeeDAO;
 import com.company.lms.model.Employee;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-@WebServlet("/login")
+// @WebServlet("/login")  <- XÓA DÒNG NÀY
 public class LoginServlet extends HttpServlet {
-    private static final Logger logger = LoggerFactory.getLogger(LoginServlet.class);
     private EmployeeDAO employeeDAO;
     
     @Override
@@ -34,11 +30,11 @@ public class LoginServlet extends HttpServlet {
         
         String username = request.getParameter("username");
         String password = request.getParameter("password");
-        String remember = request.getParameter("remember");
         
         if (username == null || username.trim().isEmpty() || 
             password == null || password.trim().isEmpty()) {
-            request.setAttribute("error", "Vui lòng nhập đầy đủ thông tin");
+            request.setAttribute("error", "Vui lòng nhập đầy đủ thông tin!");
+            request.setAttribute("username", username);
             request.getRequestDispatcher("/login.jsp").forward(request, response);
             return;
         }
@@ -48,21 +44,11 @@ public class LoginServlet extends HttpServlet {
         if (employee != null) {
             HttpSession session = request.getSession();
             session.setAttribute("user", employee);
-            session.setAttribute("employeeID", employee.getEmployeeID());
-            session.setAttribute("username", employee.getUsername());
-            session.setAttribute("fullName", employee.getFullName());
+            session.setMaxInactiveInterval(3600);
             
-            // Remember me cookie
-            if ("on".equals(remember)) {
-                Cookie userCookie = new Cookie("username", username);
-                userCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
-                response.addCookie(userCookie);
-            }
-            
-            logger.info("User logged in successfully: {}", username);
             response.sendRedirect(request.getContextPath() + "/home");
         } else {
-            request.setAttribute("error", "Tên đăng nhập hoặc mật khẩu không đúng");
+            request.setAttribute("error", "Tên đăng nhập hoặc mật khẩu không chính xác!");
             request.setAttribute("username", username);
             request.getRequestDispatcher("/login.jsp").forward(request, response);
         }

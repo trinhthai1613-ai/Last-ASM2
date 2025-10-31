@@ -8,11 +8,10 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
-@WebFilter("/*")
 public class AuthFilter implements Filter {
     
     private static final String[] PUBLIC_URLS = {
-        "/login", "/register", "/assets", "/css", "/js", "/images"
+        "/login", "/register", "/assets/", "/css/", "/js/", "/images/"
     };
     
     @Override
@@ -24,9 +23,10 @@ public class AuthFilter implements Filter {
         
         String path = httpRequest.getRequestURI().substring(httpRequest.getContextPath().length());
         
+        // Allow public resources
         boolean isPublicResource = false;
         for (String publicUrl : PUBLIC_URLS) {
-            if (path.startsWith(publicUrl) || path.endsWith(".jsp") || path.equals("/")) {
+            if (path.startsWith(publicUrl) || path.equals("/") || path.equals("/index.jsp")) {
                 isPublicResource = true;
                 break;
             }
@@ -37,6 +37,7 @@ public class AuthFilter implements Filter {
             return;
         }
         
+        // Check if user is logged in
         HttpSession session = httpRequest.getSession(false);
         boolean isLoggedIn = (session != null && session.getAttribute("user") != null);
         

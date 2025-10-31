@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.LocalDate;
 
-@WebServlet("/register")
+
 public class RegisterServlet extends HttpServlet {
     private static final Logger logger = LoggerFactory.getLogger(RegisterServlet.class);
     private EmployeeDAO employeeDAO;
