@@ -3,13 +3,13 @@ package com.company.lms.dao;
 import com.company.lms.model.LeaveRequest;
 import com.company.lms.util.DatabaseConnection;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.LoggerFactory;
 
 public class LeaveRequestDAO {
     private static final Logger logger = LoggerFactory.getLogger(LeaveRequestDAO.class);
@@ -74,6 +74,34 @@ public class LeaveRequestDAO {
             
         } catch (SQLException e) {
             logger.error("Error getting leave requests", e);
+        }
+        
+        return requests;
+    }
+    
+    /**
+     * Lấy tất cả đơn nghỉ phép đang chờ xét duyệt (status = 'InProgress')
+     * Dành cho Manager/CEO để duyệt đơn
+     */
+    public List<LeaveRequest> getPendingLeaveRequests() {
+        List<LeaveRequest> requests = new ArrayList<>();
+        String sql = "SELECT lr.*, e.FullName as EmployeeName, lt.LeaveTypeName " +
+                    "FROM LeaveRequests lr " +
+                    "LEFT JOIN Employees e ON lr.EmployeeID = e.EmployeeID " +
+                    "LEFT JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID " +
+                    "WHERE lr.Status = 'InProgress' " +
+                    "ORDER BY lr.CreatedAt DESC";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                requests.add(extractLeaveRequestFromResultSet(rs));
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error getting pending leave requests", e);
         }
         
         return requests;
