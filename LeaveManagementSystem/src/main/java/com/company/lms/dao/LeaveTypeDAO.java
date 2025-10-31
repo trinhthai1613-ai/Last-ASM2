@@ -51,6 +51,31 @@ public class LeaveTypeDAO {
         return null;
     }
     
+    /**
+     * Lấy loại nghỉ phép theo code
+     * @param code LeaveTypeCode (ví dụ: "OTHER", "ANNUAL", "SICK", etc.)
+     * @return LeaveType object hoặc null nếu không tìm thấy
+     */
+    public LeaveType getLeaveTypeByCode(String code) {
+        String sql = "SELECT * FROM LeaveTypes WHERE LeaveTypeCode = ? AND IsActive = 1";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, code);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return extractLeaveTypeFromResultSet(rs);
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error getting leave type by code: {}", code, e);
+        }
+        
+        return null;
+    }
+    
     private LeaveType extractLeaveTypeFromResultSet(ResultSet rs) throws SQLException {
         LeaveType leaveType = new LeaveType();
         leaveType.setLeaveTypeID(rs.getInt("LeaveTypeID"));
