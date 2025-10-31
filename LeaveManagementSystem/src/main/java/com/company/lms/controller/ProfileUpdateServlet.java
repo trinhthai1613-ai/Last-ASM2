@@ -8,7 +8,7 @@ import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
-import java.sql.Date;
+import java.time.LocalDate;
 
 @MultipartConfig(
     fileSizeThreshold = 1024 * 1024 * 2, // 2MB
@@ -51,7 +51,7 @@ public class ProfileUpdateServlet extends HttpServlet {
             user.setGender(gender);
             
             if (dateOfBirthStr != null && !dateOfBirthStr.isEmpty()) {
-                user.setDateOfBirth(Date.valueOf(dateOfBirthStr));
+                user.setDateOfBirth(LocalDate.parse(dateOfBirthStr));
             }
             
             // Handle avatar upload if present
@@ -59,7 +59,7 @@ public class ProfileUpdateServlet extends HttpServlet {
             if (filePart != null && filePart.getSize() > 0) {
                 String fileName = FileUploadUtil.uploadFile(filePart, getServletContext().getRealPath("/images/uploads"));
                 if (fileName != null) {
-                    user.setAvatar(fileName);
+                    user.setAvatarPath(fileName);
                 }
             }
             
