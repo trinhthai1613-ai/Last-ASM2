@@ -161,8 +161,36 @@ public class LeaveRequestDAO {
     
     /**
      * Extract LeaveRequest từ ResultSet
-     * QUAN TRỌNG: Wrap các cột trong try-catch để tránh lỗi khi cột không tồn tại
+    
+    /**
+     * Lấy tất cả đơn nghỉ phép đã được duyệt của một nhân viên
+     * Dùng để hiển thị trên calendar/agenda
      */
+    public List<LeaveRequest> getApprovedLeavesByEmployee(int employeeID) {
+        List<LeaveRequest> requests = new ArrayList<>();
+        String sql = "SELECT lr.*, lt.LeaveTypeName " +
+                    "FROM LeaveRequests lr " +
+                    "LEFT JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID " +
+                    "WHERE lr.EmployeeID = ? AND lr.Status = 'Approved' " +
+                    "ORDER BY lr.StartDate DESC";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, employeeID);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                requests.add(extractLeaveRequestFromResultSet(rs));
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error getting approved leaves by employee", e);
+        }
+        
+        return requests;
+    }
+    
     private LeaveRequest extractLeaveRequestFromResultSet(ResultSet rs) throws SQLException {
         LeaveRequest request = new LeaveRequest();
         
