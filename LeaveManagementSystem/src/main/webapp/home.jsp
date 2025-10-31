@@ -250,6 +250,15 @@
             font-size: 20px;
         }
         
+        .action-btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+        }
+        
+        .action-btn-primary:hover {
+            box-shadow: 0 15px 40px rgba(16, 185, 129, 0.5);
+        }
+        
         /* Logout button */
         .btn-logout {
             background: rgba(239, 68, 68, 0.2);
@@ -318,6 +327,7 @@
                 <a href="${pageContext.request.contextPath}/home"><i class="fas fa-home"></i> Trang chủ</a>
                 <a href="${pageContext.request.contextPath}/request/create"><i class="fas fa-plus-circle"></i> Tạo đơn</a>
                 <a href="${pageContext.request.contextPath}/request/list"><i class="fas fa-list"></i> Đơn của tôi</a>
+                <a href="${pageContext.request.contextPath}/request/pending"><i class="fas fa-tasks"></i> Duyệt đơn</a>
             </div>
             
             <div class="user-menu">
@@ -384,6 +394,11 @@
 
         <!-- Quick Actions -->
         <div class="quick-actions">
+            <a href="${pageContext.request.contextPath}/request/pending" class="action-btn action-btn-primary">
+                <i class="fas fa-tasks"></i>
+                Duyệt đơn nghỉ phép
+            </a>
+            
             <a href="${pageContext.request.contextPath}/request/create" class="action-btn">
                 <i class="fas fa-plus-circle"></i>
                 Tạo đơn nghỉ phép
