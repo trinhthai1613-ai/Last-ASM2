@@ -54,6 +54,7 @@
         <url-pattern>/request/create</url-pattern>
     </servlet-mapping>
     
+    
     <servlet>
         <servlet-name>ListLeaveRequestServlet</servlet-name>
         <servlet-class>com.company.lms.controller.ListLeaveRequestServlet</servlet-class>
@@ -62,6 +63,42 @@
         <servlet-name>ListLeaveRequestServlet</servlet-name>
         <url-pattern>/request/list</url-pattern>
     </servlet-mapping>
+    
+    <servlet>
+    <servlet-name>ProfileServlet</servlet-name>
+    <servlet-class>com.company.lms.controller.ProfileServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>ProfileServlet</servlet-name>
+    <url-pattern>/profile</url-pattern>
+</servlet-mapping>
+
+<servlet>
+    <servlet-name>ProfileEditServlet</servlet-name>
+    <servlet-class>com.company.lms.controller.ProfileEditServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>ProfileEditServlet</servlet-name>
+    <url-pattern>/profile/edit</url-pattern>
+</servlet-mapping>
+
+<servlet>
+    <servlet-name>ProfileUpdateServlet</servlet-name>
+    <servlet-class>com.company.lms.controller.ProfileUpdateServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>ProfileUpdateServlet</servlet-name>
+    <url-pattern>/profile/update</url-pattern>
+</servlet-mapping>
+
+<servlet>
+    <servlet-name>AgendaServlet</servlet-name>
+    <servlet-class>com.company.lms.controller.AgendaServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>AgendaServlet</servlet-name>
+    <url-pattern>/agenda</url-pattern>
+</servlet-mapping>
     
     <!-- Filters -->
     <filter>
