@@ -254,8 +254,7 @@
                         <option value="">-- Chọn loại nghỉ phép --</option>
                         <% if (leaveTypes != null) {
                             for (LeaveType lt : leaveTypes) { %>
-                                <option value="<%= lt.getLeaveTypeID() %>" 
-                                        data-allow-custom="<%= lt.isAllowCustomReason() %>">
+                                <option value="<%= lt.getLeaveTypeID() %>">
                                     <%= lt.getLeaveTypeName() %>
                                 </option>
                         <%  }
@@ -329,7 +328,6 @@
         leaveTypeSelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             const selectedValue = this.value;
-            const allowCustom = selectedOption.getAttribute('data-allow-custom') === 'true';
 
             // Reset textarea
             customReasonTextarea.value = '';
@@ -342,7 +340,7 @@
                 leaveTypeInfo.textContent = 'Chọn loại nghỉ phép để xem thông tin chi tiết';
             } 
             else if (selectedValue === 'other') {
-                // Chọn "Khác" - BẮT BUỘC nhập lý do
+                // CHỈ hiển thị form "Lý do" khi chọn "Khác" - BẮT BUỘC nhập lý do
                 customReasonGroup.classList.remove('hidden');
                 customReasonGroup.classList.add('show');
                 customReasonTextarea.setAttribute('required', 'required');
@@ -350,17 +348,8 @@
                 reasonOptional.classList.add('hidden');
                 leaveTypeInfo.innerHTML = '<strong>Lưu ý:</strong> Bạn cần nhập lý do chi tiết khi chọn loại nghỉ "Khác"';
             }
-            else if (allowCustom) {
-                // Loại nghỉ CHO PHÉP tùy chỉnh lý do
-                customReasonGroup.classList.remove('hidden');
-                customReasonGroup.classList.add('show');
-                customReasonTextarea.removeAttribute('required');
-                reasonRequired.classList.add('hidden');
-                reasonOptional.classList.remove('hidden');
-                leaveTypeInfo.innerHTML = 'Bạn có thể nhập thêm lý do chi tiết (không bắt buộc)';
-            }
             else {
-                // Loại nghỉ KHÔNG CHO PHÉP tùy chỉnh
+                // Các loại nghỉ khác - KHÔNG hiển thị form "Lý do"
                 customReasonGroup.classList.add('hidden');
                 customReasonGroup.classList.remove('show');
                 customReasonTextarea.removeAttribute('required');
