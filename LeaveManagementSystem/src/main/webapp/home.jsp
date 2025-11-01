@@ -357,7 +357,7 @@
                     <i class="fas fa-calendar-check"></i>
                 </div>
                 <div class="card-title">Đơn đã duyệt</div>
-                <div class="card-value">0</div>
+                <div class="card-value"><%= request.getAttribute("approvedCount") != null ? request.getAttribute("approvedCount") : 0 %></div>
                 <div class="card-description">Tổng số đơn nghỉ phép đã được duyệt</div>
             </div>
 
@@ -366,7 +366,7 @@
                     <i class="fas fa-clock"></i>
                 </div>
                 <div class="card-title">Đang chờ</div>
-                <div class="card-value">0</div>
+                <div class="card-value"><%= request.getAttribute("pendingCount") != null ? request.getAttribute("pendingCount") : 0 %></div>
                 <div class="card-description">Đơn đang chờ xét duyệt</div>
             </div>
 
@@ -375,7 +375,7 @@
                     <i class="fas fa-umbrella-beach"></i>
                 </div>
                 <div class="card-title">Ngày phép còn lại</div>
-                <div class="card-value">12</div>
+                <div class="card-value"><%= request.getAttribute("remainingDays") != null ? request.getAttribute("remainingDays") : 0 %></div>
                 <div class="card-description">Số ngày phép bạn có thể sử dụng</div>
             </div>
 
@@ -384,7 +384,7 @@
                     <i class="fas fa-chart-line"></i>
                 </div>
                 <div class="card-title">Đã sử dụng</div>
-                <div class="card-value">0</div>
+                <div class="card-value"><%= request.getAttribute("usedDays") != null ? request.getAttribute("usedDays") : 0 %></div>
                 <div class="card-description">Số ngày phép đã sử dụng năm nay</div>
             </div>
         </div>
