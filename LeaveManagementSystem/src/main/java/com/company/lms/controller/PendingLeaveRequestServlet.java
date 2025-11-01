@@ -3,6 +3,7 @@ package com.company.lms.controller;
 import com.company.lms.dao.LeaveRequestDAO;
 import com.company.lms.model.Employee;
 import com.company.lms.model.LeaveRequest;
+import com.company.lms.service.EmployeeService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
@@ -16,10 +17,12 @@ import java.util.List;
 public class PendingLeaveRequestServlet extends HttpServlet {
     private static final Logger logger = LoggerFactory.getLogger(PendingLeaveRequestServlet.class);
     private LeaveRequestDAO leaveRequestDAO;
+    private EmployeeService employeeService;
     
     @Override
     public void init() throws ServletException {
         leaveRequestDAO = new LeaveRequestDAO();
+        employeeService = new EmployeeService();
     }
     
     @Override
@@ -33,8 +36,15 @@ public class PendingLeaveRequestServlet extends HttpServlet {
         
         Employee user = (Employee) session.getAttribute("user");
         
+        // KIỂM TRA QUYỀN: Chỉ Manager mới được xem danh sách đơn chờ duyệt
+        if (!employeeService.isManager(user.getEmployeeID())) {
+            logger.warn("Unauthorized access attempt to pending requests by employee: {}", user.getEmployeeID());
+            session.setAttribute("error", "Bạn không có quyền truy cập trang này! Chỉ quản lý mới có thể xem và duyệt đơn.");
+            response.sendRedirect(request.getContextPath() + "/home");
+            return;
+        }
+        
         // Lấy tất cả đơn có trạng thái InProgress
-        // TODO: Thêm logic kiểm tra quyền - chỉ Manager/CEO mới được xem
         List<LeaveRequest> pendingRequests = leaveRequestDAO.getPendingLeaveRequests();
         
         request.setAttribute("pendingRequests", pendingRequests);

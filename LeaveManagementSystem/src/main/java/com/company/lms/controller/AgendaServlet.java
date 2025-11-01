@@ -6,6 +6,7 @@ import com.company.lms.dao.LeaveRequestDAO;
 import com.company.lms.model.Division;
 import com.company.lms.model.Employee;
 import com.company.lms.model.LeaveRequest;
+import com.company.lms.service.EmployeeService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
 import org.slf4j.Logger;
@@ -22,12 +23,14 @@ public class AgendaServlet extends HttpServlet {
     private LeaveRequestDAO leaveRequestDAO;
     private DivisionDAO divisionDAO;
     private EmployeeDAO employeeDAO;
+    private EmployeeService employeeService;
     
     @Override
     public void init() throws ServletException {
         leaveRequestDAO = new LeaveRequestDAO();
         divisionDAO = new DivisionDAO();
         employeeDAO = new EmployeeDAO();
+        employeeService = new EmployeeService();
     }
     
     @Override
@@ -41,6 +44,14 @@ public class AgendaServlet extends HttpServlet {
         }
         
         Employee user = (Employee) session.getAttribute("user");
+        
+        // KIỂM TRA QUYỀN: Chỉ Manager mới được xem agenda
+        if (!employeeService.isManager(user.getEmployeeID())) {
+            logger.warn("Unauthorized access attempt to agenda by employee: {}", user.getEmployeeID());
+            session.setAttribute("error", "Bạn không có quyền truy cập trang này! Chỉ quản lý mới có thể xem lịch nghỉ phép.");
+            response.sendRedirect(request.getContextPath() + "/home");
+            return;
+        }
         
         try {
             // Get all divisions for filter dropdown

@@ -2,6 +2,7 @@ package com.company.lms.controller;
 
 import com.company.lms.dao.LeaveRequestDAO;
 import com.company.lms.model.Employee;
+import com.company.lms.service.EmployeeService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
@@ -14,10 +15,12 @@ import java.io.IOException;
 public class ProcessLeaveRequestServlet extends HttpServlet {
     private static final Logger logger = LoggerFactory.getLogger(ProcessLeaveRequestServlet.class);
     private LeaveRequestDAO leaveRequestDAO;
+    private EmployeeService employeeService;
     
     @Override
     public void init() throws ServletException {
         leaveRequestDAO = new LeaveRequestDAO();
+        employeeService = new EmployeeService();
     }
     
     @Override
@@ -33,6 +36,14 @@ public class ProcessLeaveRequestServlet extends HttpServlet {
         }
         
         Employee user = (Employee) session.getAttribute("user");
+        
+        // KIỂM TRA QUYỀN: Chỉ Manager mới được duyệt/từ chối đơn
+        if (!employeeService.isManager(user.getEmployeeID())) {
+            logger.warn("Unauthorized process attempt by employee: {}", user.getEmployeeID());
+            session.setAttribute("error", "Bạn không có quyền duyệt đơn! Chỉ quản lý mới có thể duyệt đơn nghỉ phép.");
+            response.sendRedirect(request.getContextPath() + "/home");
+            return;
+        }
         
         try {
             int requestID = Integer.parseInt(request.getParameter("requestID"));
