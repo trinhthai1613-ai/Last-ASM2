@@ -16,6 +16,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/main.css">
+    <style>
+        .avatar-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 15px auto;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: 700;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
 </head>
 <body>
     <div class="container" style="max-width: 800px; margin: 40px auto; padding: 0 30px;">
@@ -25,6 +47,15 @@
         
         <div class="card mt-2">
             <h1 class="gradient-text mb-3"><i class="fas fa-edit"></i> Chỉnh sửa thông tin</h1>
+            
+            <!-- Avatar Preview -->
+            <div class="avatar-preview" id="avatarPreview">
+                <% if (user.getAvatarPath() != null && !user.getAvatarPath().isEmpty()) { %>
+                    <img src="${pageContext.request.contextPath}/images/uploads/<%= user.getAvatarPath() %>" alt="Avatar" id="previewImg">
+                <% } else { %>
+                    <span id="previewText"><%= user.getFullName().substring(0, 1).toUpperCase() %></span>
+                <% } %>
+            </div>
             
             <form action="${pageContext.request.contextPath}/profile/update" method="post" enctype="multipart/form-data">
                 <div class="form-group">
@@ -59,7 +90,7 @@
                 
                 <div class="form-group">
                     <label class="form-label">Ảnh đại diện</label>
-                    <input type="file" name="avatar" class="form-control" accept="image/*">
+                    <input type="file" name="avatar" id="avatarInput" class="form-control" accept="image/*">
                 </div>
                 
                 <button type="submit" class="btn btn-primary" style="width: 100%;">
@@ -68,5 +99,30 @@
             </form>
         </div>
     </div>
+    
+    <script>
+        document.getElementById('avatarInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const preview = document.getElementById('avatarPreview');
+                    const existingImg = preview.querySelector('img');
+                    const existingText = preview.querySelector('span');
+                    
+                    if (existingImg) {
+                        existingImg.src = event.target.result;
+                    } else {
+                        if (existingText) existingText.style.display = 'none';
+                        const img = document.createElement('img');
+                        img.src = event.target.result;
+                        img.id = 'previewImg';
+                        preview.appendChild(img);
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 </body>
 </html>

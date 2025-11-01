@@ -106,6 +106,13 @@
             font-size: 18px;
             cursor: pointer;
             transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         
         .user-avatar:hover {
@@ -333,7 +340,11 @@
                     <div class="user-role"><%= user.getDivisionName() != null ? user.getDivisionName() : "Nhân viên" %></div>
                 </div>
                 <div class="user-avatar">
-                    <%= user.getFullName().substring(0, 1).toUpperCase() %>
+                    <% if (user.getAvatarPath() != null && !user.getAvatarPath().isEmpty()) { %>
+                        <img src="${pageContext.request.contextPath}/images/uploads/<%= user.getAvatarPath() %>" alt="Avatar">
+                    <% } else { %>
+                        <%= user.getFullName().substring(0, 1).toUpperCase() %>
+                    <% } %>
                 </div>
                 <button class="btn-logout" onclick="logout()">
                     <i class="fas fa-sign-out-alt"></i> Đăng xuất

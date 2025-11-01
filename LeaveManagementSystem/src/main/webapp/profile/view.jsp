@@ -40,6 +40,13 @@
             font-size: 48px;
             font-weight: 700;
             box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            overflow: hidden;
+        }
+        
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         
         .profile-info {
@@ -81,7 +88,11 @@
         <div class="card mt-2">
             <div class="profile-header">
                 <div class="profile-avatar">
-                    <%= user.getFullName().substring(0, 1).toUpperCase() %>
+                    <% if (user.getAvatarPath() != null && !user.getAvatarPath().isEmpty()) { %>
+                        <img src="${pageContext.request.contextPath}/images/uploads/<%= user.getAvatarPath() %>" alt="Avatar">
+                    <% } else { %>
+                        <%= user.getFullName().substring(0, 1).toUpperCase() %>
+                    <% } %>
                 </div>
                 <h1 class="gradient-text"><%= user.getFullName() %></h1>
                 <p style="color: #94a3b8;"><%= user.getDivisionName() != null ? user.getDivisionName() : "Nhân viên" %></p>
