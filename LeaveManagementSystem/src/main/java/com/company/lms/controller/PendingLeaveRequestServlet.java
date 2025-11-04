@@ -37,12 +37,12 @@ public class PendingLeaveRequestServlet extends HttpServlet {
         Employee user = (Employee) session.getAttribute("user");
         
         // KIỂM TRA QUYỀN: Chỉ Manager mới được xem danh sách đơn chờ duyệt
-        if (!employeeService.isManager(user.getEmployeeID())) {
-            logger.warn("Unauthorized access attempt to pending requests by employee: {}", user.getEmployeeID());
-            session.setAttribute("error", "Bạn không có quyền truy cập trang này! Chỉ quản lý mới có thể xem và duyệt đơn.");
-            response.sendRedirect(request.getContextPath() + "/home");
-            return;
-        }
+        if (!employeeService.isSeniorManagement(user.getEmployeeID())) {
+    logger.warn("Unauthorized access attempt to pending requests by employee: {}", user.getEmployeeID());
+    session.setAttribute("error", "Bạn không có quyền truy cập trang này! Chỉ quản lý cấp cao (Level 1-2) mới có thể xem và duyệt đơn.");
+    response.sendRedirect(request.getContextPath() + "/home");
+    return;
+}
         
         // Lấy tất cả đơn có trạng thái InProgress
         List<LeaveRequest> pendingRequests = leaveRequestDAO.getPendingLeaveRequests();

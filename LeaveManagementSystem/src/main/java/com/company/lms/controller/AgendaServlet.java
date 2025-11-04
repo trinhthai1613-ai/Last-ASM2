@@ -46,12 +46,12 @@ public class AgendaServlet extends HttpServlet {
         Employee user = (Employee) session.getAttribute("user");
         
         // KIỂM TRA QUYỀN: Chỉ Manager mới được xem agenda
-        if (!employeeService.isManager(user.getEmployeeID())) {
-            logger.warn("Unauthorized access attempt to agenda by employee: {}", user.getEmployeeID());
-            session.setAttribute("error", "Bạn không có quyền truy cập trang này! Chỉ quản lý mới có thể xem lịch nghỉ phép.");
-            response.sendRedirect(request.getContextPath() + "/home");
-            return;
-        }
+        if (!employeeService.isSeniorManagement(user.getEmployeeID())) {
+    logger.warn("Unauthorized access attempt to agenda by employee: {}", user.getEmployeeID());
+    session.setAttribute("error", "Bạn không có quyền truy cập trang này! Chỉ quản lý cấp cao (Level 1-2) mới có thể xem lịch nghỉ phép.");
+    response.sendRedirect(request.getContextPath() + "/home");
+    return;
+}
         
         try {
             // Get all divisions for filter dropdown

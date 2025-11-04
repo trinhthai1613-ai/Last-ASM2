@@ -72,4 +72,8 @@ public class EmployeeService {
                hasRole(employeeID, "DIVISION_LEADER") ||
                hasRole(employeeID, "TEAM_LEADER");
     }
+    public boolean isSeniorManagement(int employeeID) {
+    List<Role> roles = roleDAO.getRolesByEmployeeId(employeeID);
+    return roles.stream().anyMatch(r -> r.getLevel() == 1 || r.getLevel() == 2);
+}
 }
