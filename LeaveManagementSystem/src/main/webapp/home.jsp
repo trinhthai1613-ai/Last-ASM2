@@ -1,450 +1,250 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="com.company.lms.model.Employee" %>
-<%
-    Employee user = (Employee) session.getAttribute("user");
-    if (user == null) {
-        response.sendRedirect(request.getContextPath() + "/login");
-        return;
-    }
-%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang chủ - Leave Management System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Trang Chủ - Leave Management System</title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/main.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Be Vietnam Pro', sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1d3e 50%, #2a2d5e 100%);
-            min-height: 100vh;
-            color: #fff;
-        }
-        
-        /* Navigation */
-        .navbar {
-            background: rgba(10, 14, 39, 0.95);
-            backdrop-filter: blur(20px);
-            padding: 20px 0;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .nav-container {
-            max-width: 1400px;
+        .dashboard-container {
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 0 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 20px;
         }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .logo i {
-            font-size: 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .nav-menu {
-            display: flex;
-            gap: 30px;
-            align-items: center;
-        }
-        
-        .nav-menu a {
-            color: #cbd5e1;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            padding: 8px 16px;
-            border-radius: 8px;
-        }
-        
-        .nav-menu a:hover {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-        
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .user-avatar {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 18px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
-        
-        .user-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .user-avatar:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
-        }
-        
-        .user-info {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .user-name {
-            font-weight: 600;
-            font-size: 16px;
-        }
-        
-        .user-role {
-            font-size: 13px;
-            color: #94a3b8;
-        }
-        
-        /* Main Container */
-        .main-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 30px;
-        }
-        
         .welcome-section {
-            background: rgba(10, 14, 39, 0.7);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 40px;
-            margin-bottom: 40px;
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-        }
-        
-        .welcome-section h1 {
-            font-size: 36px;
-            margin-bottom: 15px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .welcome-section p {
-            font-size: 18px;
-            color: #94a3b8;
-        }
-        
-        /* Dashboard Cards */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-        
-        .dashboard-card {
-            background: rgba(10, 14, 39, 0.7);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
+            color: white;
             padding: 30px;
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            transition: all 0.3s ease;
-            cursor: pointer;
+            border-radius: 10px;
+            margin-bottom: 30px;
         }
-        
-        .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 50px rgba(102, 126, 234, 0.3);
-            border-color: rgba(99, 102, 241, 0.5);
-        }
-        
-        .card-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .card-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-        
-        .card-description {
-            color: #94a3b8;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        
-        .card-value {
-            font-size: 32px;
-            font-weight: 700;
-            margin: 15px 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        /* Quick Actions */
-        .quick-actions {
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
+            margin-bottom: 30px;
         }
-        
-        .action-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 15px;
-            padding: 20px 30px;
-            color: #fff;
-            font-size: 16px;
-            font-weight: 600;
-            font-family: 'Be Vietnam Pro', sans-serif;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-        }
-        
-        .action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
-        }
-        
-        .action-btn i {
-            font-size: 20px;
-        }
-        
-        .action-btn-primary {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
-        }
-        
-        .action-btn-primary:hover {
-            box-shadow: 0 15px 40px rgba(16, 185, 129, 0.5);
-        }
-        
-        /* Logout button */
-        .btn-logout {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.5);
-            color: #fca5a5;
-            padding: 10px 20px;
+        .stat-card {
+            background: white;
+            padding: 25px;
             border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Be Vietnam Pro', sans-serif;
-            font-weight: 500;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
         }
-        
-        .btn-logout:hover {
-            background: rgba(239, 68, 68, 0.3);
-            transform: translateY(-2px);
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
         }
-        
-        /* Animation */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
         }
-        
-        .dashboard-card {
-            animation: fadeInUp 0.6s ease forwards;
+        .stat-label {
+            color: #666;
+            margin-top: 10px;
         }
-        
-        .dashboard-card:nth-child(1) { animation-delay: 0.1s; }
-        .dashboard-card:nth-child(2) { animation-delay: 0.2s; }
-        .dashboard-card:nth-child(3) { animation-delay: 0.3s; }
-        .dashboard-card:nth-child(4) { animation-delay: 0.4s; }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .nav-menu {
-                display: none;
-            }
-            
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .quick-actions {
-                grid-template-columns: 1fr;
-            }
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .action-btn {
+            display: block;
+            padding: 20px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            color: #667eea;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .action-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: scale(1.05);
+        }
+        .action-btn.primary {
+            background: #667eea;
+            color: white;
+        }
+        .action-btn.primary:hover {
+            background: #5568d3;
+        }
+        .action-btn.manager-only {
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+        .action-btn.manager-only:hover {
+            background: #f59e0b;
+            color: white;
+        }
+        .permission-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <i class="fas fa-rocket"></i>
-                <span>Leave System</span>
-            </div>
-            
-            <div class="nav-menu">
+    <jsp:include page="/WEB-INF/includes/header.jsp" />
 
-            </div>
-            
-            <div class="user-menu">
-                <div class="user-info">
-                    <div class="user-name"><%= user.getFullName() %></div>
-                    <div class="user-role"><%= user.getDivisionName() != null ? user.getDivisionName() : "Nhân viên" %></div>
-                </div>
-                <div class="user-avatar">
-                    <% if (user.getAvatarPath() != null && !user.getAvatarPath().isEmpty()) { %>
-                        <img src="${pageContext.request.contextPath}/images/uploads/<%= user.getAvatarPath() %>" alt="Avatar">
-                    <% } else { %>
-                        <%= user.getFullName().substring(0, 1).toUpperCase() %>
-                    <% } %>
-                </div>
-                <button class="btn-logout" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <div class="main-container">
+    <div class="dashboard-container">
         <!-- Welcome Section -->
         <div class="welcome-section">
-            <h1>👋 Xin chào, <%= user.getFullName() %>!</h1>
-            <p>Chào mừng bạn đến với Hệ thống quản lý nghỉ phép. Hãy bắt đầu quản lý đơn nghỉ phép của bạn ngay hôm nay.</p>
+            <h1>Xin chào, ${user.fullName}!</h1>
+            <p>Chào mừng bạn đến với Hệ thống Quản lý Nghỉ phép</p>
+            
+            <!-- Hiển thị Level/Role -->
+            <c:choose>
+                <c:when test="${employeeLevel == 1}">
+                    <span class="permission-badge">👑 Cấp Quản Trị (Level 1 - CEO/Admin)</span>
+                </c:when>
+                <c:when test="${employeeLevel == 2}">
+                    <span class="permission-badge">🎯 Quản Lý Cấp Cao (Level 2 - Manager)</span>
+                </c:when>
+                <c:when test="${employeeLevel == 3}">
+                    <span class="permission-badge">📋 Trưởng Nhóm (Level 3 - Team Leader)</span>
+                </c:when>
+                <c:when test="${employeeLevel == 4}">
+                    <span class="permission-badge">👤 Nhân Viên (Level 4 - Employee)</span>
+                </c:when>
+                <c:otherwise>
+                    <span class="permission-badge">⚠️ Chưa phân quyền</span>
+                </c:otherwise>
+            </c:choose>
         </div>
 
-        <!-- Dashboard Cards -->
-        <div class="dashboard-grid">
-            <div class="dashboard-card">
-                <div class="card-icon">
-                    <i class="fas fa-calendar-check"></i>
-                </div>
-                <div class="card-title">Đơn đã duyệt</div>
-                <div class="card-value"><%= request.getAttribute("approvedCount") != null ? request.getAttribute("approvedCount") : 0 %></div>
-                <div class="card-description">Tổng số đơn nghỉ phép đã được duyệt</div>
+        <!-- Alert Messages -->
+        <c:if test="${not empty sessionScope.success}">
+            <div class="alert alert-success">
+                ${sessionScope.success}
+            </div>
+            <c:remove var="success" scope="session"/>
+        </c:if>
+
+        <c:if test="${not empty sessionScope.error}">
+            <div class="alert alert-error">
+                ${sessionScope.error}
+            </div>
+            <c:remove var="error" scope="session"/>
+        </c:if>
+
+        <!-- Statistics Grid -->
+        <div class="stats-grid">
+            <!-- Đơn đã duyệt -->
+            <div class="stat-card">
+                <div class="stat-number">${approvedCount}</div>
+                <div class="stat-label">Đơn Đã Duyệt</div>
             </div>
 
-            <div class="dashboard-card">
-                <div class="card-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="card-title">Đang chờ</div>
-                <div class="card-value"><%= request.getAttribute("pendingCount") != null ? request.getAttribute("pendingCount") : 0 %></div>
-                <div class="card-description">Đơn đang chờ xét duyệt</div>
+            <!-- Đơn đang chờ -->
+            <div class="stat-card">
+                <div class="stat-number">${pendingCount}</div>
+                <div class="stat-label">Đơn Đang Chờ</div>
             </div>
 
-            <div class="dashboard-card">
-                <div class="card-icon">
-                    <i class="fas fa-umbrella-beach"></i>
-                </div>
-                <div class="card-title">Ngày phép còn lại</div>
-                <div class="card-value"><%= request.getAttribute("remainingDays") != null ? request.getAttribute("remainingDays") : 0 %></div>
-                <div class="card-description">Số ngày phép bạn có thể sử dụng</div>
+            <!-- Ngày phép còn lại -->
+            <div class="stat-card">
+                <div class="stat-number">${remainingDays}</div>
+                <div class="stat-label">Ngày Phép Còn Lại</div>
             </div>
 
-            <div class="dashboard-card">
-                <div class="card-icon">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <div class="card-title">Đã sử dụng</div>
-                <div class="card-value"><%= request.getAttribute("usedDays") != null ? request.getAttribute("usedDays") : 0 %></div>
-                <div class="card-description">Số ngày phép đã sử dụng năm nay</div>
+            <!-- Ngày phép đã sử dụng -->
+            <div class="stat-card">
+                <div class="stat-number">${usedDays}</div>
+                <div class="stat-label">Ngày Phép Đã Dùng</div>
             </div>
+
+            <!-- THÊM CARD NÀY CHO MANAGER (LEVEL 1-2) -->
+            <c:if test="${canApprove}">
+                <div class="stat-card" style="border: 2px solid #f59e0b;">
+                    <div class="stat-number" style="color: #f59e0b;">${pendingApprovalCount}</div>
+                    <div class="stat-label">🔔 Đơn Cần Duyệt</div>
+                </div>
+            </c:if>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="quick-actions">
-            <a href="${pageContext.request.contextPath}/request/pending" class="action-btn action-btn-primary">
-                <i class="fas fa-tasks"></i>
-                Duyệt đơn nghỉ phép
+        <!-- Actions Grid -->
+        <div class="actions-grid">
+            <!-- Tạo đơn nghỉ phép - TẤT CẢ đều được -->
+            <a href="${pageContext.request.contextPath}/request/create" class="action-btn primary">
+                ➕ Tạo Đơn Nghỉ Phép
             </a>
-            
-            <a href="${pageContext.request.contextPath}/request/create" class="action-btn">
-                <i class="fas fa-plus-circle"></i>
-                Tạo đơn nghỉ phép
-            </a>
-            
+
+            <!-- Xem đơn của tôi - TẤT CẢ đều được -->
             <a href="${pageContext.request.contextPath}/request/list" class="action-btn">
-                <i class="fas fa-list-ul"></i>
-                Xem đơn của tôi
+                📋 Xem Đơn Của Tôi
             </a>
-            
+
+            <!-- Xem hồ sơ - TẤT CẢ đều được -->
             <a href="${pageContext.request.contextPath}/profile" class="action-btn">
-                <i class="fas fa-user-circle"></i>
-                Thông tin cá nhân
+                👤 Hồ Sơ Cá Nhân
             </a>
-            
-            <a href="${pageContext.request.contextPath}/agenda" class="action-btn">
-                <i class="fas fa-calendar-alt"></i>
-                Lịch nghỉ phép
-            </a>
+
+            <!-- DUYỆT ĐơN - CHỈ LEVEL 1-2 -->
+            <c:if test="${canApprove}">
+                <a href="${pageContext.request.contextPath}/request/pending" class="action-btn manager-only">
+                    ✅ Duyệt Đơn Nghỉ Phép
+                </a>
+            </c:if>
+
+            <!-- XEM AGENDA - CHỈ LEVEL 1-2 -->
+            <c:if test="${canViewAgenda}">
+                <a href="${pageContext.request.contextPath}/agenda" class="action-btn manager-only">
+                    📅 Xem Lịch Nghỉ Phép
+                </a>
+            </c:if>
+
+            <!-- QUẢN LÝ NHÂN VIÊN - CHỈ LEVEL 1-2 -->
+            <c:if test="${canManageEmployees}">
+                <a href="${pageContext.request.contextPath}/employee/manage" class="action-btn manager-only">
+                    👥 Quản Lý Nhân Viên
+                </a>
+            </c:if>
+
+            <!-- XEM BÁO CÁO - CHỈ LEVEL 1-2 -->
+            <c:if test="${canViewReports}">
+                <a href="${pageContext.request.contextPath}/report/view" class="action-btn manager-only">
+                    📊 Xem Báo Cáo
+                </a>
+            </c:if>
+        </div>
+
+        <!-- Thông tin phân quyền (debug - có thể xóa sau) -->
+        <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em;">
+            <strong>🔒 Thông tin phân quyền:</strong><br>
+            Level: ${employeeLevel} |
+            Duyệt đơn: ${canApprove ? "✅" : "❌"} |
+            Xem agenda: ${canViewAgenda ? "✅" : "❌"} |
+            Quản lý NV: ${canManageEmployees ? "✅" : "❌"} |
+            Xem báo cáo: ${canViewReports ? "✅" : "❌"}
         </div>
     </div>
 
-    <script>
-        function logout() {
-            if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
-                window.location.href = '${pageContext.request.contextPath}/logout';
-            }
-        }
-        
-        // Smooth scroll
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
-            });
-        });
-    </script>
+    <jsp:include page="/WEB-INF/includes/footer.jsp" />
 </body>
 </html>
