@@ -21,11 +21,9 @@
     Integer selectedLeaveTypeId = (Integer) request.getAttribute("selectedLeaveTypeId");
     String currentMonth = (String) request.getAttribute("currentMonth");
 
-    // Lấy danh sách loại nghỉ phép
     LeaveTypeDAO leaveTypeDAO = new LeaveTypeDAO();
     List<LeaveType> leaveTypes = leaveTypeDAO.getAllLeaveTypes();
 
-    // Tạo map để tra cứu nhanh
     Map<Integer, Map<LocalDate, LeaveRequest>> leaveMap = new HashMap<>();
     if (leaveRequests != null) {
         for (LeaveRequest lr : leaveRequests) {
@@ -38,11 +36,10 @@
         }
     }
 
-    // Tính số ngày trong tháng và ngày bắt đầu
     YearMonth ym = YearMonth.parse(currentMonth);
     int daysInMonth = ym.lengthOfMonth();
     LocalDate firstDay = ym.atDay(1);
-    int firstDayOfWeek = firstDay.getDayOfWeek().getValue(); // 1=Mon, 7=Sun
+    int firstDayOfWeek = firstDay.getDayOfWeek().getValue();
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -50,157 +47,213 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lịch nghỉ phép</title>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Be Vietnam Pro', sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1d3e 50%, #2a2d5e 100%);
-            min-height: 100vh; color: #fff; padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            color: #1d1d1f;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
         }
         .container { max-width: 1600px; margin: 0 auto; }
         .header {
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 30px;
         }
         .header h1 {
-            font-size: 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
         .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none; border-radius: 10px; padding: 10px 20px;
-            color: #fff; font-weight: 600; cursor: pointer;
-            transition: all 0.3s ease; text-decoration: none;
+            background: #000000;
+            border: none;
+            border-radius: 980px;
+            padding: 8px 18px;
+            color: #fff;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            text-decoration: none;
             display: inline-block;
+            font-size: 14px;
+            letter-spacing: -0.01em;
         }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
-        .btn-secondary { background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.5); }
+        .btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .btn-secondary {
+            background: #f5f5f7;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: #1d1d1f;
+        }
+        .btn-secondary:hover {
+            background: #e8e8ed;
+            transform: scale(1.02);
+        }
 
         .filter-section {
-            background: rgba(10,14,39,0.7); backdrop-filter: blur(20px);
-            border-radius: 15px; padding: 25px; margin-bottom: 25px;
-            border: 1px solid rgba(99,102,241,0.2);
+            background: #f5f5f7;
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
         .filter-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px; margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
         }
         .form-group { display: flex; flex-direction: column; }
-        .form-group label { margin-bottom: 8px; color: #94a3b8; font-size: 14px; }
+        .form-group label {
+            margin-bottom: 8px;
+            color: #6e6e73;
+            font-size: 13px;
+        }
         .form-control {
-            background: rgba(15,23,42,0.5); border: 1px solid rgba(99,102,241,0.3);
-            border-radius: 8px; padding: 10px 15px; color: #fff; font-size: 14px;
-            transition: all 0.3s ease;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 10px 14px;
+            color: #1d1d1f;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
         .form-control:focus {
-            outline: none; border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+            outline: none;
+            border-color: #000000;
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.06);
         }
 
         .calendar-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 20px; padding: 20px;
-            background: rgba(10,14,39,0.7); border-radius: 15px;
-            border: 1px solid rgba(99,102,241,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f5f5f7;
+            border-radius: 18px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
         .month-title {
-            font-size: 24px; font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
         .month-nav { display: flex; gap: 10px; }
 
         .calendar {
-            background: rgba(10,14,39,0.7); backdrop-filter: blur(20px);
-            border-radius: 15px; padding: 25px;
-            border: 1px solid rgba(99,102,241,0.2);
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 24px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
         }
         .weekdays {
-            display: grid; grid-template-columns: repeat(7, 1fr);
-            gap: 10px; margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
         }
         .weekday {
-            text-align: center; padding: 15px;
-            background: rgba(99,102,241,0.2);
-            border-radius: 8px; font-weight: 600;
-            color: #94a3b8;
+            text-align: center;
+            padding: 12px;
+            background: #f5f5f7;
+            border-radius: 12px;
+            font-weight: 600;
+            color: #6e6e73;
+            font-size: 13px;
         }
         .days {
-            display: grid; grid-template-columns: repeat(7, 1fr);
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
             gap: 10px;
         }
         .day {
-            min-height: 120px; padding: 10px;
-            background: rgba(15,23,42,0.5);
-            border: 1px solid rgba(99,102,241,0.2);
-            border-radius: 8px; position: relative;
-            transition: all 0.3s ease;
+            min-height: 120px;
+            padding: 10px;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
         .day:hover {
-            border-color: rgba(99,102,241,0.5);
+            border-color: rgba(0, 0, 0, 0.2);
             transform: translateY(-2px);
         }
         .day-number {
-            font-weight: 700; font-size: 16px;
-            color: #94a3b8; margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #6e6e73;
+            margin-bottom: 8px;
         }
         .day.today .day-number {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            color: #000000;
         }
         .leave-item {
-            background: rgba(239,68,68,0.15);
-            border-left: 3px solid #ef4444;
-            padding: 5px 8px; margin-bottom: 5px;
-            border-radius: 4px; font-size: 12px;
-            cursor: pointer; transition: all 0.3s ease;
+            background: rgba(255, 59, 48, 0.1);
+            border-left: 3px solid #ff3b30;
+            padding: 5px 8px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
         .leave-item:hover {
-            background: rgba(239,68,68,0.25);
+            background: rgba(255, 59, 48, 0.2);
             transform: translateX(3px);
         }
-        .leave-name { font-weight: 600; color: #fff; }
-        .leave-type { color: #fca5a5; font-size: 11px; }
+        .leave-name { font-weight: 600; color: #1d1d1f; }
+        .leave-type { color: #ff3b30; font-size: 10px; }
 
         .legend {
-            margin-top: 20px; padding: 15px;
-            background: rgba(10,14,39,0.5);
-            border-radius: 10px; display: flex;
-            gap: 20px; flex-wrap: wrap;
+            margin-top: 20px;
+            padding: 16px;
+            background: #f5f5f7;
+            border-radius: 12px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
         }
         .legend-item {
-            display: flex; align-items: center; gap: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .legend-box {
-            width: 20px; height: 20px; border-radius: 4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
         }
-
-        option { background: #1a1d3e; color: #fff; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1><i class="fas fa-calendar-alt"></i> Lịch nghỉ phép</h1>
+        <h1>📅 Lịch nghỉ phép</h1>
         <div style="display: flex; gap: 10px;">
             <a href="${pageContext.request.contextPath}/export" class="btn">
-                <i class="fas fa-download"></i> Xuất báo cáo
+                ⬇️ Xuất báo cáo
             </a>
             <a href="${pageContext.request.contextPath}/home" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Quay lại
+                ← Quay lại
             </a>
         </div>
     </div>
 
-    <!-- Filter Section -->
     <div class="filter-section">
         <form method="get" action="${pageContext.request.contextPath}/agenda">
             <div class="filter-grid">
                 <div class="form-group">
-                    <label><i class="fas fa-building"></i> Phòng ban</label>
+                    <label>🏢 Phòng ban</label>
                     <select name="divisionId" class="form-control" onchange="this.form.submit()">
                         <% if (divisions != null) {
                             for (Division div : divisions) { %>
@@ -213,7 +266,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label><i class="fas fa-user"></i> Nhân viên</label>
+                    <label>👤 Nhân viên</label>
                     <select name="employeeId" class="form-control" onchange="this.form.submit()">
                         <option value="">Tất cả</option>
                         <% if (employees != null) {
@@ -227,7 +280,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label><i class="fas fa-tag"></i> Loại nghỉ phép</label>
+                    <label>🏷️ Loại nghỉ phép</label>
                     <select name="leaveTypeId" class="form-control" onchange="this.form.submit()">
                         <option value="">Tất cả</option>
                         <% if (leaveTypes != null) {
@@ -245,26 +298,23 @@
         </form>
     </div>
 
-    <!-- Calendar Header -->
     <div class="calendar-header">
         <div class="month-title">
-            <i class="fas fa-calendar"></i>
-            Tháng <%= ym.getMonthValue() %>, <%= ym.getYear() %>
+            📆 Tháng <%= ym.getMonthValue() %>, <%= ym.getYear() %>
         </div>
         <div class="month-nav">
             <a href="?month=<%= ym.minusMonths(1).toString() %>&divisionId=<%= selectedDivisionId %>" class="btn btn-secondary">
-                <i class="fas fa-chevron-left"></i>
+                ←
             </a>
             <a href="?month=<%= YearMonth.now().toString() %>&divisionId=<%= selectedDivisionId %>" class="btn btn-secondary">
                 Hôm nay
             </a>
             <a href="?month=<%= ym.plusMonths(1).toString() %>&divisionId=<%= selectedDivisionId %>" class="btn btn-secondary">
-                <i class="fas fa-chevron-right"></i>
+                →
             </a>
         </div>
     </div>
 
-    <!-- Calendar -->
     <div class="calendar">
         <div class="weekdays">
             <div class="weekday">Thứ 2</div>
@@ -278,12 +328,10 @@
 
         <div class="days">
             <% 
-            // Empty cells trước ngày 1
             for (int i = 1; i < firstDayOfWeek; i++) { %>
                 <div class="day" style="opacity: 0.3;"></div>
             <% }
             
-            // Các ngày trong tháng
             for (int day = 1; day <= daysInMonth; day++) {
                 LocalDate currentDate = ym.atDay(day);
                 boolean isToday = currentDate.equals(LocalDate.now());
@@ -291,7 +339,6 @@
                 <div class="day <%= isToday ? "today" : "" %>">
                     <div class="day-number"><%= day %></div>
                     <% 
-                    // Hiển thị các đơn nghỉ trong ngày này
                     if (employees != null) {
                         for (Employee emp : employees) {
                             Map<LocalDate, LeaveRequest> empLeaves = leaveMap.get(emp.getEmployeeID());
@@ -313,11 +360,11 @@
 
         <div class="legend">
             <div class="legend-item">
-                <div class="legend-box" style="background: rgba(239,68,68,0.3); border: 2px solid #ef4444;"></div>
+                <div class="legend-box" style="background: rgba(255,59,48,0.2); border: 2px solid #ff3b30;"></div>
                 <span>Nghỉ phép</span>
             </div>
             <div class="legend-item">
-                <div class="legend-box" style="background: transparent; border: 2px solid rgba(99,102,241,0.5);"></div>
+                <div class="legend-box" style="background: transparent; border: 2px solid rgba(0,0,0,0.1);"></div>
                 <span>Ngày làm việc</span>
             </div>
         </div>

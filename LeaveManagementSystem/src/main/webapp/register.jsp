@@ -5,61 +5,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng ký - Hệ thống quản lý nghỉ phép</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Be Vietnam Pro', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #ffffff;
+            color: #1d1d1f;
             overflow-x: hidden;
-            background: #0a0e27;
-            color: #fff;
+            -webkit-font-smoothing: antialiased;
         }
-        
-        #background-container {
+        .background {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            background: linear-gradient(135deg, #f5f5f7 0%, #e8e8ed 100%);
             z-index: 1;
         }
-        
-        model-viewer {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1d3e 50%, #2a2d5e 100%);
-        }
-        
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            pointer-events: none;
-        }
-        
-        .star {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle 3s infinite;
-        }
-        
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
-        
         .main-container {
             position: relative;
             z-index: 10;
@@ -69,89 +32,73 @@
             min-height: 100vh;
             padding: 40px 20px;
         }
-        
         .form-container {
-            background: rgba(10, 14, 39, 0.85);
-            backdrop-filter: blur(20px);
-            border-radius: 30px;
+            background: #ffffff;
+            border-radius: 18px;
             padding: 50px 40px;
             width: 100%;
             max-width: 550px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
-                        0 0 100px rgba(99, 102, 241, 0.3);
-            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             opacity: 0;
             transform: translateY(30px);
             animation: slideIn 0.8s ease forwards;
         }
-        
         @keyframes slideIn {
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-        
         .logo-container {
             text-align: center;
             margin-bottom: 35px;
         }
-        
         .logo-icon {
-            width: 70px;
-            height: 70px;
+            width: 64px;
+            height: 64px;
             margin: 0 auto 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #000000;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 35px;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            font-size: 30px;
         }
-        
         h1 {
             font-size: 26px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+            color: #1d1d1f;
             margin-bottom: 8px;
+            letter-spacing: -0.02em;
         }
-        
         .subtitle {
-            color: #94a3b8;
+            color: #6e6e73;
             font-size: 14px;
             font-weight: 400;
         }
-        
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
+            gap: 16px;
+            margin-bottom: 16px;
         }
-        
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
-        
         .form-group.full-width {
             grid-column: 1 / -1;
         }
-        
         label {
             display: block;
             margin-bottom: 8px;
-            color: #cbd5e1;
+            color: #1d1d1f;
             font-size: 13px;
             font-weight: 500;
         }
-        
         label .required {
-            color: #f87171;
+            color: #ff3b30;
         }
-        
         input[type="text"],
         input[type="email"],
         input[type="password"],
@@ -159,143 +106,80 @@
         input[type="date"],
         select {
             width: 100%;
-            padding: 13px 18px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 2px solid rgba(99, 102, 241, 0.3);
+            padding: 12px 16px;
+            background: #f5f5f7;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
-            color: #fff;
+            color: #1d1d1f;
             font-size: 14px;
-            font-family: 'Be Vietnam Pro', sans-serif;
-            transition: all 0.3s ease;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
-        
         input:focus,
         select:focus {
             outline: none;
-            border-color: #667eea;
-            background: rgba(15, 23, 42, 0.8);
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            border-color: #000000;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.06);
         }
-        
         input::placeholder {
-            color: #64748b;
+            color: #86868b;
         }
-        
         select {
             cursor: pointer;
         }
-        
-        select option {
-            background: #0f172a;
-            color: #fff;
-        }
-        
         .btn-primary {
             width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px;
+            background: #000000;
             border: none;
-            border-radius: 12px;
-            color: #fff;
-            font-size: 16px;
-            font-weight: 600;
-            font-family: 'Be Vietnam Pro', sans-serif;
+            border-radius: 980px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             margin-top: 10px;
+            letter-spacing: -0.01em;
         }
-        
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
-        
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-        
         .login-link {
             text-align: center;
             margin-top: 25px;
-            color: #94a3b8;
+            color: #6e6e73;
             font-size: 14px;
         }
-        
         .login-link a {
-            color: #667eea;
+            color: #000000;
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 500;
             transition: all 0.3s ease;
         }
-        
         .login-link a:hover {
-            color: #764ba2;
             text-decoration: underline;
         }
-        
         .alert {
-            padding: 15px 20px;
+            padding: 12px 16px;
             border-radius: 12px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             font-size: 14px;
-            animation: shake 0.5s ease;
         }
-        
         .alert-error {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.5);
-            color: #fca5a5;
+            background: rgba(255, 59, 48, 0.1);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            color: #ff3b30;
         }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-        
-        .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 14, 39, 0.95);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            opacity: 1;
-            transition: opacity 0.5s ease;
-        }
-        
-        .loading.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(99, 102, 241, 0.2);
-            border-top-color: #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
         @media (max-width: 768px) {
             .form-container {
                 padding: 40px 30px;
             }
-            
             .form-row {
                 grid-template-columns: 1fr;
             }
-            
             h1 {
                 font-size: 24px;
             }
@@ -303,23 +187,7 @@
     </style>
 </head>
 <body>
-    <div class="loading" id="loading">
-        <div class="spinner"></div>
-    </div>
-
-    <div id="background-container">
-        <model-viewer
-            src="${pageContext.request.contextPath}/assets/space.glb"
-            alt="Space Scene"
-            auto-rotate
-            camera-controls
-            disable-zoom
-            rotation-per-second="20deg"
-            interpolation-decay="200">
-        </model-viewer>
-    </div>
-
-    <div class="stars" id="stars"></div>
+    <div class="background"></div>
 
     <div class="main-container">
         <div class="form-container">
@@ -428,29 +296,6 @@
     </div>
 
     <script>
-        function createStars() {
-            const starsContainer = document.getElementById('stars');
-            const numberOfStars = 100;
-            
-            for (let i = 0; i < numberOfStars; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                star.style.width = Math.random() * 3 + 'px';
-                star.style.height = star.style.width;
-                star.style.animationDelay = Math.random() * 3 + 's';
-                starsContainer.appendChild(star);
-            }
-        }
-        
-        window.addEventListener('load', function() {
-            createStars();
-            setTimeout(() => {
-                document.getElementById('loading').classList.add('hidden');
-            }, 500);
-        });
-        
         document.querySelector('form').addEventListener('submit', function(e) {
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
@@ -460,8 +305,6 @@
                 alert('Mật khẩu xác nhận không khớp!');
                 return;
             }
-            
-            document.getElementById('loading').classList.remove('hidden');
         });
     </script>
 </body>

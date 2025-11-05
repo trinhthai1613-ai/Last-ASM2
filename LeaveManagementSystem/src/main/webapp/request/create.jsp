@@ -16,30 +16,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tạo đơn nghỉ phép</title>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Be Vietnam Pro', sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1d3e 50%, #2a2d5e 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #ffffff;
+            color: #1d1d1f;
             min-height: 100vh;
-            color: #fff;
+            -webkit-font-smoothing: antialiased;
         }
-        
         .navbar {
-            background: rgba(10, 14, 39, 0.95);
-            backdrop-filter: blur(20px);
-            padding: 20px 0;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+            background: #ffffff;
+            padding: 16px 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
-        
         .nav-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -48,55 +39,44 @@
             justify-content: space-between;
             align-items: center;
         }
-        
         .logo {
             display: flex;
             align-items: center;
-            gap: 15px;
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #000000;
             text-decoration: none;
+            letter-spacing: -0.02em;
         }
-        
         .main-container {
             max-width: 800px;
             margin: 40px auto;
             padding: 0 30px;
         }
-        
         .form-card {
-            background: rgba(10, 14, 39, 0.7);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
+            background: #ffffff;
+            border-radius: 18px;
             padding: 40px;
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
         }
-        
         h1 {
-            font-size: 32px;
+            font-size: 28px;
             margin-bottom: 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
-        
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 24px;
             transition: all 0.3s ease;
         }
-        
         .form-group.hidden {
             display: none;
         }
-        
         .form-group.show {
             animation: slideDown 0.3s ease-out;
         }
-        
         @keyframes slideDown {
             from {
                 opacity: 0;
@@ -107,119 +87,103 @@
                 transform: translateY(0);
             }
         }
-        
         label {
             display: block;
             margin-bottom: 8px;
-            color: #cbd5e1;
+            color: #1d1d1f;
             font-size: 14px;
             font-weight: 500;
         }
-        
         .required {
-            color: #f87171;
+            color: #ff3b30;
         }
-        
         .optional {
-            color: #94a3b8;
+            color: #6e6e73;
             font-size: 12px;
             font-weight: 400;
         }
-        
         input, select, textarea {
             width: 100%;
-            padding: 13px 18px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 2px solid rgba(99, 102, 241, 0.3);
+            padding: 12px 16px;
+            background: #f5f5f7;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
-            color: #fff;
+            color: #1d1d1f;
             font-size: 14px;
-            font-family: 'Be Vietnam Pro', sans-serif;
-            transition: all 0.3s ease;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
-        
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #667eea;
-            background: rgba(15, 23, 42, 0.8);
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            border-color: #000000;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.06);
         }
-        
         textarea {
             min-height: 120px;
             resize: vertical;
         }
-        
         .info-box {
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 10px;
-            padding: 12px 15px;
+            background: rgba(52, 199, 89, 0.1);
+            border: 1px solid rgba(52, 199, 89, 0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
             margin-top: 8px;
-            color: #93c5fd;
+            color: #34c759;
             font-size: 13px;
             display: flex;
             align-items: start;
             gap: 10px;
         }
-        
-        .info-box i {
-            margin-top: 2px;
-        }
-        
         .btn-submit {
             width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px;
+            background: #000000;
             border: none;
-            border-radius: 12px;
+            border-radius: 980px;
             color: #fff;
-            font-size: 16px;
-            font-weight: 600;
-            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             margin-top: 20px;
+            letter-spacing: -0.01em;
         }
-        
         .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
-        
         .btn-submit:disabled {
-            background: rgba(99, 102, 241, 0.3);
+            background: #e8e8ed;
             cursor: not-allowed;
             transform: none;
         }
-        
         .btn-back {
             display: inline-block;
-            padding: 10px 20px;
-            background: rgba(99, 102, 241, 0.2);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            border-radius: 10px;
-            color: #cbd5e1;
+            padding: 8px 18px;
+            background: #f5f5f7;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 980px;
+            color: #1d1d1f;
             text-decoration: none;
             margin-bottom: 20px;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            font-size: 14px;
+            font-weight: 500;
         }
-        
         .btn-back:hover {
-            background: rgba(99, 102, 241, 0.3);
+            background: #e8e8ed;
         }
-        
         .alert {
-            padding: 15px 20px;
+            padding: 12px 16px;
             border-radius: 12px;
             margin-bottom: 20px;
         }
-        
         .alert-error {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.5);
-            color: #fca5a5;
+            background: rgba(255, 59, 48, 0.1);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            color: #ff3b30;
         }
     </style>
 </head>
@@ -227,19 +191,18 @@
     <nav class="navbar">
         <div class="nav-container">
             <a href="${pageContext.request.contextPath}/home" class="logo">
-                <i class="fas fa-rocket"></i>
-                <span>Leave System</span>
+                🚀 Leave System
             </a>
         </div>
     </nav>
 
     <div class="main-container">
         <a href="${pageContext.request.contextPath}/home" class="btn-back">
-            <i class="fas fa-arrow-left"></i> Quay lại
+            ← Quay lại
         </a>
         
         <div class="form-card">
-            <h1><i class="fas fa-plus-circle"></i> Tạo đơn nghỉ phép</h1>
+            <h1>➕ Tạo đơn nghỉ phép</h1>
             
             <% if (request.getAttribute("error") != null) { %>
                 <div class="alert alert-error">
@@ -262,7 +225,7 @@
                         <option value="other">Khác (Nhập lý do tùy chỉnh)</option>
                     </select>
                     <div class="info-box">
-                        <i class="fas fa-info-circle"></i>
+                        <span>ℹ️</span>
                         <span id="leaveTypeInfo">Chọn loại nghỉ phép để xem thông tin chi tiết</span>
                     </div>
                 </div>
@@ -285,20 +248,19 @@
                     <textarea id="customReason" name="customReason" 
                               placeholder="Nhập lý do nghỉ phép của bạn..."></textarea>
                     <div class="info-box">
-                        <i class="fas fa-lightbulb"></i>
+                        <span>💡</span>
                         <span>Hãy mô tả chi tiết lý do nghỉ phép để quản lý dễ dàng xét duyệt đơn của bạn.</span>
                     </div>
                 </div>
                 
                 <button type="submit" class="btn-submit" id="submitBtn">
-                    <i class="fas fa-paper-plane"></i> Gửi đơn
+                    Gửi đơn
                 </button>
             </form>
         </div>
     </div>
 
     <script>
-        // Lấy các elements
         const leaveTypeSelect = document.getElementById('leaveTypeID');
         const customReasonGroup = document.getElementById('customReasonGroup');
         const customReasonTextarea = document.getElementById('customReason');
@@ -309,14 +271,12 @@
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
 
-        // Set ngày tối thiểu là ngày mai
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         const minDate = tomorrow.toISOString().split('T')[0];
         startDateInput.min = minDate;
         endDateInput.min = minDate;
 
-        // Validate end date phải >= start date
         startDateInput.addEventListener('change', function() {
             endDateInput.min = this.value;
             if (endDateInput.value && endDateInput.value < this.value) {
@@ -324,23 +284,19 @@
             }
         });
 
-        // Xử lý khi thay đổi loại nghỉ phép
         leaveTypeSelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             const selectedValue = this.value;
 
-            // Reset textarea
             customReasonTextarea.value = '';
             
             if (selectedValue === '') {
-                // Chưa chọn gì
                 customReasonGroup.classList.add('hidden');
                 customReasonGroup.classList.remove('show');
                 customReasonTextarea.removeAttribute('required');
                 leaveTypeInfo.textContent = 'Chọn loại nghỉ phép để xem thông tin chi tiết';
             } 
             else if (selectedValue === 'other') {
-                // CHỈ hiển thị form "Lý do" khi chọn "Khác" - BẮT BUỘC nhập lý do
                 customReasonGroup.classList.remove('hidden');
                 customReasonGroup.classList.add('show');
                 customReasonTextarea.setAttribute('required', 'required');
@@ -349,7 +305,6 @@
                 leaveTypeInfo.innerHTML = '<strong>Lưu ý:</strong> Bạn cần nhập lý do chi tiết khi chọn loại nghỉ "Khác"';
             }
             else {
-                // Các loại nghỉ khác - KHÔNG hiển thị form "Lý do"
                 customReasonGroup.classList.add('hidden');
                 customReasonGroup.classList.remove('show');
                 customReasonTextarea.removeAttribute('required');
@@ -357,14 +312,12 @@
             }
         });
 
-        // Validate form trước khi submit
         form.addEventListener('submit', function(e) {
             const leaveType = leaveTypeSelect.value;
             const customReason = customReasonTextarea.value.trim();
             const startDate = new Date(startDateInput.value);
             const endDate = new Date(endDateInput.value);
 
-            // Kiểm tra loại nghỉ
             if (!leaveType) {
                 e.preventDefault();
                 alert('Vui lòng chọn loại nghỉ phép!');
@@ -372,7 +325,6 @@
                 return;
             }
 
-            // Kiểm tra ngày
             if (endDate < startDate) {
                 e.preventDefault();
                 alert('Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu!');
@@ -380,7 +332,6 @@
                 return;
             }
 
-            // Kiểm tra lý do khi chọn "Khác"
             if (leaveType === 'other' && !customReason) {
                 e.preventDefault();
                 alert('Vui lòng nhập lý do khi chọn loại nghỉ "Khác"!');
@@ -388,31 +339,7 @@
                 return;
             }
 
-            // Xử lý khi chọn "Khác" - set leaveTypeID về null và bắt buộc có customReason
-            if (leaveType === 'other') {
-                // Không set leaveTypeID, để backend xử lý
-                // Đảm bảo customReason đã được điền
-                if (!customReason) {
-                    e.preventDefault();
-                    alert('Vui lòng nhập lý do nghỉ phép!');
-                    customReasonTextarea.focus();
-                    return;
-                }
-            }
-
-            // All validation passed
             return true;
-        });
-
-        // Real-time validation cho custom reason khi bắt buộc
-        customReasonTextarea.addEventListener('input', function() {
-            if (leaveTypeSelect.value === 'other') {
-                if (this.value.trim().length < 10) {
-                    this.style.borderColor = 'rgba(239, 68, 68, 0.5)';
-                } else {
-                    this.style.borderColor = 'rgba(34, 197, 94, 0.5)';
-                }
-            }
         });
     </script>
 </body>

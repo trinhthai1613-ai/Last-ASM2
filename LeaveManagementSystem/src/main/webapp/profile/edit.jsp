@@ -13,125 +13,99 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chỉnh sửa thông tin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Be Vietnam Pro', sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1d3e 50%, #2a2d5e 100%);
-            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #ffffff;
+            color: #1d1d1f;
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
-        
         .btn {
-            padding: 12px 24px;
+            padding: 10px 22px;
             border: none;
-            border-radius: 12px;
-            font-family: 'Be Vietnam Pro', sans-serif;
+            border-radius: 980px;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             text-decoration: none;
             display: inline-block;
+            letter-spacing: -0.01em;
         }
-        
         .btn-secondary {
-            background: rgba(99, 102, 241, 0.2);
-            border: 1px solid rgba(99, 102, 241, 0.5);
-            color: #cbd5e1;
+            background: #f5f5f7;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: #1d1d1f;
         }
-        
         .btn-secondary:hover {
-            background: rgba(99, 102, 241, 0.3);
-            transform: translateY(-2px);
+            background: #e8e8ed;
         }
-        
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #000000;
             color: white;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
         }
-        
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
-        
         .card {
-            background: rgba(10, 14, 39, 0.7);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
+            background: #ffffff;
+            border-radius: 18px;
             padding: 40px;
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
         }
-        
-        .mt-2 {
-            margin-top: 20px;
-        }
-        
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .mb-3 {
+        .mt-2 { margin-top: 20px; }
+        h1 {
+            font-size: 28px;
             margin-bottom: 30px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
-        
         .form-group {
             margin-bottom: 20px;
         }
-        
         .form-label {
             display: block;
             margin-bottom: 8px;
-            color: #cbd5e1;
+            color: #1d1d1f;
             font-size: 14px;
             font-weight: 500;
         }
-        
         .form-control {
             width: 100%;
-            padding: 13px 18px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 2px solid rgba(99, 102, 241, 0.2);
+            padding: 12px 16px;
+            background: #f5f5f7;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
-            color: white;
+            color: #1d1d1f;
             font-size: 14px;
-            font-family: 'Be Vietnam Pro', sans-serif;
-            transition: all 0.3s ease;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
-        
         .form-control:focus {
             outline: none;
-            border-color: #667eea;
-            background: rgba(15, 23, 42, 0.8);
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            border-color: #000000;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.06);
         }
         .avatar-preview {
             width: 120px;
             height: 120px;
             border-radius: 50%;
             margin: 15px auto;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #000000;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 48px;
-            font-weight: 700;
+            font-weight: 600;
+            color: #fff;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
         }
-        
         .avatar-preview img {
             width: 100%;
             height: 100%;
@@ -142,13 +116,12 @@
 <body>
     <div class="container" style="max-width: 800px; margin: 40px auto; padding: 0 30px;">
         <a href="${pageContext.request.contextPath}/profile" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Quay lại
+            ← Quay lại
         </a>
         
         <div class="card mt-2">
-            <h1 class="gradient-text mb-3"><i class="fas fa-edit"></i> Chỉnh sửa thông tin</h1>
+            <h1>✏️ Chỉnh sửa thông tin</h1>
             
-            <!-- Avatar Preview -->
             <div class="avatar-preview" id="avatarPreview">
                 <% if (user.getAvatarPath() != null && !user.getAvatarPath().isEmpty()) { %>
                     <img src="${pageContext.request.contextPath}/images/uploads/<%= user.getAvatarPath() %>" alt="Avatar" id="previewImg">
@@ -159,12 +132,12 @@
             
             <form action="${pageContext.request.contextPath}/profile/update" method="post" enctype="multipart/form-data">
                 <div class="form-group">
-                    <label class="form-label">Họ và tên <span style="color: #ef4444;">*</span></label>
+                    <label class="form-label">Họ và tên <span style="color: #ff3b30;">*</span></label>
                     <input type="text" name="fullName" class="form-control" value="<%= user.getFullName() %>" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Email <span style="color: #ef4444;">*</span></label>
+                    <label class="form-label">Email <span style="color: #ff3b30;">*</span></label>
                     <input type="email" name="email" class="form-control" value="<%= user.getEmail() %>" required>
                 </div>
                 
@@ -194,7 +167,7 @@
                 </div>
                 
                 <button type="submit" class="btn btn-primary" style="width: 100%;">
-                    <i class="fas fa-save"></i> Lưu thay đổi
+                    💾 Lưu thay đổi
                 </button>
             </form>
         </div>
