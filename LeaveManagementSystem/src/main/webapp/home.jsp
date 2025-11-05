@@ -204,7 +204,7 @@ boolean isSeniorManagement = (roleLevel == 1 || roleLevel == 2);
     <div class="main-container">
         <div class="welcome-section">
             <h1>👋 Xin chào, <%= user.getFullName() %>!</h1>
-            <p>Chào mừng bạn đến với Hệ thống quản lý nghỉ phép. Hãy bắt đầu quản lý đơn nghỉ phép của bạn ngay hôm nay.</p>
+            <p>Chúc bạn một ngày tốt lành!</p>
         </div>
 
         <div class="dashboard-grid">
