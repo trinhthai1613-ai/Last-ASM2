@@ -14,7 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AgendaServlet extends HttpServlet {
@@ -44,39 +45,46 @@ public class AgendaServlet extends HttpServlet {
         }
 
         Employee user = (Employee) session.getAttribute("user");
-
-        // ✅ KIỂM TRA QUYỀN: CHỈ LEVEL 1-2 MỚI ĐƯỢC XEM AGENDA
-        if (!employeeService.canViewAgenda(user.getEmployeeID())) {
-            int level = employeeService.getEmployeeLevel(user.getEmployeeID());
-            logger.warn("Unauthorized access attempt to agenda by employee: {} (Level: {})", 
-                user.getEmployeeID(), level);
-            
-            session.setAttribute("error", 
-                "❌ Bạn không có quyền truy cập trang này! " +
-                "Chỉ quản lý cấp cao (Level 1-2: CEO, Admin, Division Leader, HR Manager) " +
-                "mới có thể xem lịch nghỉ phép của phòng ban. " +
-                "Level hiện tại của bạn: " + level);
-            
+        int roleLevel = employeeService.getLowestRoleLevel(user.getEmployeeID());
+        
+        if (roleLevel != 1) {
+            logger.warn("Unauthorized access to agenda by employee: {}", user.getEmployeeID());
+            session.setAttribute("error", "Bạn không có quyền truy cập trang này!");
             response.sendRedirect(request.getContextPath() + "/home");
             return;
         }
 
         try {
-            // Get all divisions for filter dropdown
+            // Lấy danh sách phòng ban và loại nghỉ phép
             List<Division> divisions = divisionDAO.getAllDivisions();
             request.setAttribute("divisions", divisions);
 
-            // Get filter parameters
+            // Lấy tham số filter
             String divisionIdParam = request.getParameter("divisionId");
-            String startDateParam = request.getParameter("startDate");
-            String endDateParam = request.getParameter("endDate");
+            String employeeIdParam = request.getParameter("employeeId");
+            String leaveTypeIdParam = request.getParameter("leaveTypeId");
+            String monthParam = request.getParameter("month");
 
-            // Default values
+            // Xác định tháng hiển thị
+            YearMonth currentMonth;
+            if (monthParam != null && !monthParam.isEmpty()) {
+                try {
+                    currentMonth = YearMonth.parse(monthParam);
+                } catch (Exception e) {
+                    currentMonth = YearMonth.now();
+                }
+            } else {
+                currentMonth = YearMonth.now();
+            }
+
+            LocalDate startDate = currentMonth.atDay(1);
+            LocalDate endDate = currentMonth.atEndOfMonth();
+
+            // Parse filters
             Integer selectedDivisionId = null;
-            LocalDate startDate = LocalDate.now();
-            LocalDate endDate = LocalDate.now().plusDays(30);
+            Integer selectedEmployeeId = null;
+            Integer selectedLeaveTypeId = null;
 
-            // Parse division filter
             if (divisionIdParam != null && !divisionIdParam.isEmpty()) {
                 try {
                     selectedDivisionId = Integer.parseInt(divisionIdParam);
@@ -84,66 +92,68 @@ public class AgendaServlet extends HttpServlet {
                     logger.warn("Invalid division ID: {}", divisionIdParam);
                 }
             } else {
-                // Default to user's division
                 selectedDivisionId = user.getDivisionID();
             }
 
-            // Parse date filters
-            if (startDateParam != null && !startDateParam.isEmpty()) {
+            if (employeeIdParam != null && !employeeIdParam.isEmpty()) {
                 try {
-                    startDate = LocalDate.parse(startDateParam);
-                } catch (Exception e) {
-                    logger.warn("Invalid start date: {}", startDateParam);
+                    selectedEmployeeId = Integer.parseInt(employeeIdParam);
+                } catch (NumberFormatException e) {
+                    logger.warn("Invalid employee ID: {}", employeeIdParam);
                 }
             }
 
-            if (endDateParam != null && !endDateParam.isEmpty()) {
+            if (leaveTypeIdParam != null && !leaveTypeIdParam.isEmpty()) {
                 try {
-                    endDate = LocalDate.parse(endDateParam);
-                } catch (Exception e) {
-                    logger.warn("Invalid end date: {}", endDateParam);
+                    selectedLeaveTypeId = Integer.parseInt(leaveTypeIdParam);
+                } catch (NumberFormatException e) {
+                    logger.warn("Invalid leave type ID: {}", leaveTypeIdParam);
                 }
             }
 
-            // Validate date range
-            if (endDate.isBefore(startDate)) {
-                endDate = startDate.plusDays(30);
-            }
-
-            // Get employees in selected division
-            List<Employee> employees = null;
+            // Lấy danh sách nhân viên theo phòng ban
+            List<Employee> employees = new ArrayList<>();
             if (selectedDivisionId != null) {
                 employees = employeeDAO.getEmployeesByDivision(selectedDivisionId);
             }
 
-            // Get approved leave requests for the selected employees in date range
-            List<LeaveRequest> leaveRequests = null;
+            // Lấy danh sách đơn nghỉ đã duyệt
+            List<LeaveRequest> leaveRequests = new ArrayList<>();
             if (selectedDivisionId != null) {
                 leaveRequests = leaveRequestDAO.getApprovedLeavesByDivisionAndDateRange(
                     selectedDivisionId, startDate, endDate);
+                
+                // Lọc theo employee nếu được chọn
+                if (selectedEmployeeId != null) {
+                    final int empId = selectedEmployeeId;
+                    leaveRequests.removeIf(lr -> lr.getEmployeeID() != empId);
+                }
+                
+                // Lọc theo leave type nếu được chọn
+                if (selectedLeaveTypeId != null) {
+                    final int typeId = selectedLeaveTypeId;
+                    leaveRequests.removeIf(lr -> lr.getLeaveTypeID() != typeId);
+                }
             }
 
             // Set attributes
             request.setAttribute("employees", employees);
             request.setAttribute("leaveRequests", leaveRequests);
             request.setAttribute("selectedDivisionId", selectedDivisionId);
-            request.setAttribute("startDate", startDate.toString());
-            request.setAttribute("endDate", endDate.toString());
+            request.setAttribute("selectedEmployeeId", selectedEmployeeId);
+            request.setAttribute("selectedLeaveTypeId", selectedLeaveTypeId);
+            request.setAttribute("currentMonth", currentMonth.toString());
+            request.setAttribute("startDate", startDate);
+            request.setAttribute("endDate", endDate);
 
-            logger.info("✅ Agenda loaded by user {} (Level: {}): division={}, employees={}, leaves={}, dateRange={} to {}",
-                user.getUsername(),
-                employeeService.getEmployeeLevel(user.getEmployeeID()),
-                selectedDivisionId,
-                employees != null ? employees.size() : 0,
-                leaveRequests != null ? leaveRequests.size() : 0,
-                startDate, endDate);
+            logger.info("Calendar loaded: division={}, month={}, leaves={}", 
+                       selectedDivisionId, currentMonth, leaveRequests.size());
 
         } catch (Exception e) {
-            logger.error("Error loading agenda", e);
+            logger.error("Error loading calendar", e);
             request.setAttribute("error", "Không thể tải lịch nghỉ phép: " + e.getMessage());
         }
 
-        // Forward to agenda page
         request.getRequestDispatcher("/agenda.jsp").forward(request, response);
     }
 }

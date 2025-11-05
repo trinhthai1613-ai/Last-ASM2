@@ -27,27 +27,28 @@ public class PendingLeaveRequestServlet extends HttpServlet {
     
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-        
-        Employee user = (Employee) session.getAttribute("user");
-        
-        // KIỂM TRA QUYỀN: Chỉ Manager mới được xem danh sách đơn chờ duyệt
-        if (!employeeService.isSeniorManagement(user.getEmployeeID())) {
-    logger.warn("Unauthorized access attempt to pending requests by employee: {}", user.getEmployeeID());
-    session.setAttribute("error", "Bạn không có quyền truy cập trang này! Chỉ quản lý cấp cao (Level 1-2) mới có thể xem và duyệt đơn.");
-    response.sendRedirect(request.getContextPath() + "/home");
-    return;
-}
-        
-        // Lấy tất cả đơn có trạng thái InProgress
-        List<LeaveRequest> pendingRequests = leaveRequestDAO.getPendingLeaveRequests();
-        
-        request.setAttribute("pendingRequests", pendingRequests);
-        request.getRequestDispatcher("/request/pending.jsp").forward(request, response);
+        throws ServletException, IOException {
+    HttpSession session = request.getSession(false);
+    if (session == null || session.getAttribute("user") == null) {
+        response.sendRedirect(request.getContextPath() + "/login");
+        return;
+    }
+    
+    Employee user = (Employee) session.getAttribute("user");
+    
+    // ✅ KIỂM TRA QUYỀN: CHỈ LEVEL 1 VÀ 2 MỚI ĐƯỢC XEM DANH SÁCH ĐƠN CHỜ DUYỆT
+    int roleLevel = employeeService.getLowestRoleLevel(user.getEmployeeID());
+    if (roleLevel > 2) {
+        logger.warn("Unauthorized access attempt to pending requests by employee: {} with level: {}", 
+                    user.getEmployeeID(), roleLevel);
+        session.setAttribute("error", "Bạn không có quyền truy cập trang này! Chỉ quản lý cấp cao (Level 1-2) mới có thể xem và duyệt đơn.");
+        response.sendRedirect(request.getContextPath() + "/home");
+        return;
+    }
+    List<LeaveRequest> pendingRequests = leaveRequestDAO.getPendingLeaveRequests();
+    
+    request.setAttribute("pendingRequests", pendingRequests);
+    request.getRequestDispatcher("/request/pending.jsp").forward(request, response);
+
     }
 }

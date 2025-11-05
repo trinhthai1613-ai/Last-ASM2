@@ -38,12 +38,14 @@ public class ProcessLeaveRequestServlet extends HttpServlet {
         Employee user = (Employee) session.getAttribute("user");
         
         // KIỂM TRA QUYỀN: Chỉ Manager mới được duyệt/từ chối đơn
-        if (!employeeService.isManager(user.getEmployeeID())) {
-            logger.warn("Unauthorized process attempt by employee: {}", user.getEmployeeID());
-            session.setAttribute("error", "Bạn không có quyền duyệt đơn! Chỉ quản lý mới có thể duyệt đơn nghỉ phép.");
-            response.sendRedirect(request.getContextPath() + "/home");
-            return;
-        }
+        int roleLevel = employeeService.getLowestRoleLevel(user.getEmployeeID());
+    if (roleLevel > 2) {
+        logger.warn("Unauthorized process attempt by employee: {} with level: {}", 
+                    user.getEmployeeID(), roleLevel);
+        session.setAttribute("error", "Bạn không có quyền duyệt đơn! Chỉ quản lý cấp cao (Level 1-2) mới có thể duyệt đơn nghỉ phép.");
+        response.sendRedirect(request.getContextPath() + "/home");
+        return;
+    }
         
         try {
             int requestID = Integer.parseInt(request.getParameter("requestID"));

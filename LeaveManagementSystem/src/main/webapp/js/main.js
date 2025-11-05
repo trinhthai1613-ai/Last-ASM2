@@ -211,3 +211,17 @@ function initDatePickers() {
         input.min = new Date().toISOString().split('T')[0];
     });
 }
+function changeView(mode) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('viewMode', mode);
+    url.searchParams.delete('startDate'); // Let server calculate
+    url.searchParams.delete('endDate');
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
+function exportCSV() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('export', 'csv');
+    window.open(url.toString(), '_blank');
+}

@@ -78,6 +78,70 @@ public class LeaveRequestDAO {
         
         return requests;
     }
+    public List<LeaveRequest> getFilteredLeavesByDivisionAndDateRange(
+        int divisionID, LocalDate startDate, LocalDate endDate, 
+        String searchName, String searchReason, String statusFilter) {
+    
+    List<LeaveRequest> requests = new ArrayList<>();
+    
+    StringBuilder sql = new StringBuilder(
+        "SELECT lr.*, e.FullName as EmployeeName, lt.LeaveTypeName " +
+        "FROM LeaveRequests lr " +
+        "INNER JOIN Employees e ON lr.EmployeeID = e.EmployeeID " +
+        "LEFT JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID " +
+        "WHERE e.DivisionID = ? " +
+        "  AND e.IsActive = 1 " +
+        "  AND ((lr.StartDate >= ? AND lr.StartDate <= ?) " +
+        "       OR (lr.EndDate >= ? AND lr.EndDate <= ?) " +
+        "       OR (lr.StartDate <= ? AND lr.EndDate >= ?))"
+    );
+    
+    // Dynamic filters
+    if (searchName != null && !searchName.trim().isEmpty()) {
+        sql.append(" AND e.FullName LIKE ?");
+    }
+    if (searchReason != null && !searchReason.trim().isEmpty()) {
+        sql.append(" AND lr.Reason LIKE ?");
+    }
+    if (statusFilter != null && !statusFilter.trim().isEmpty()) {
+        sql.append(" AND lr.Status = ?");
+    }
+    
+    sql.append(" ORDER BY e.FullName, lr.StartDate");
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+        
+        int paramIndex = 1;
+        stmt.setInt(paramIndex++, divisionID);
+        stmt.setDate(paramIndex++, Date.valueOf(startDate));
+        stmt.setDate(paramIndex++, Date.valueOf(endDate));
+        stmt.setDate(paramIndex++, Date.valueOf(startDate));
+        stmt.setDate(paramIndex++, Date.valueOf(endDate));
+        stmt.setDate(paramIndex++, Date.valueOf(startDate));
+        stmt.setDate(paramIndex++, Date.valueOf(endDate));
+        
+        if (searchName != null && !searchName.trim().isEmpty()) {
+            stmt.setString(paramIndex++, "%" + searchName.trim() + "%");
+        }
+        if (searchReason != null && !searchReason.trim().isEmpty()) {
+            stmt.setString(paramIndex++, "%" + searchReason.trim() + "%");
+        }
+        if (statusFilter != null && !statusFilter.trim().isEmpty()) {
+            stmt.setString(paramIndex++, statusFilter.trim());
+        }
+        
+        ResultSet rs = stmt.executeQuery();
+        while (rs.next()) {
+            requests.add(extractLeaveRequestFromResultSet(rs));
+        }
+        
+    } catch (SQLException e) {
+        logger.error("Error getting filtered leaves", e);
+    }
+    
+    return requests;
+}
     
     /**
      * Lấy tất cả đơn nghỉ phép đang chờ xét duyệt (status = 'InProgress')

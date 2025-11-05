@@ -1,37 +1,37 @@
-/* Theme CSS - Additional Styling */
+/* Theme CSS - Apple Style (Black & White) */
 
 /* Gradient Text */
 .gradient-text {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #000000 0%, #1d1d1f 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 /* Glass Effect */
 .glass {
-    background: rgba(10, 14, 39, 0.7);
+    background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 /* Hover Effects */
 .hover-lift {
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .hover-lift:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 50px rgba(102, 126, 234, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 /* Loading Spinner */
 .spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid rgba(99, 102, 241, 0.2);
-    border-top-color: #667eea;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-top-color: #000000;
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
@@ -40,15 +40,15 @@
 
 /* Status Colors */
 .status-pending {
-    color: #fbbf24;
+    color: #ff9500;
 }
 
 .status-approved {
-    color: #22c55e;
+    color: #34c759;
 }
 
 .status-rejected {
-    color: #ef4444;
+    color: #ff3b30;
 }
 
 /* Icon Buttons */
@@ -59,15 +59,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(99, 102, 241, 0.1);
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .icon-btn:hover {
-    background: rgba(99, 102, 241, 0.2);
-    transform: scale(1.1);
+    background: rgba(0, 0, 0, 0.08);
+    transform: scale(1.05);
 }
 
 /* Timeline */
@@ -83,7 +83,7 @@
     top: 0;
     bottom: 0;
     width: 2px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: rgba(0, 0, 0, 0.1);
 }
 
 .timeline-item {
@@ -99,22 +99,22 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #667eea;
-    border: 3px solid #0a0e27;
+    background: #000000;
+    border: 3px solid #ffffff;
 }
 
 /* Progress Bar */
 .progress {
-    height: 8px;
-    background: rgba(99, 102, 241, 0.2);
+    height: 6px;
+    background: rgba(0, 0, 0, 0.08);
     border-radius: 10px;
     overflow: hidden;
 }
 
 .progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-    transition: width 0.3s ease;
+    background: #000000;
+    transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* Modal Overlay */
@@ -124,7 +124,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(10, 14, 39, 0.9);
+    background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
@@ -133,29 +133,32 @@
 }
 
 .modal {
-    background: rgba(10, 14, 39, 0.95);
-    border-radius: 20px;
+    background: #ffffff;
+    border-radius: 18px;
     padding: 40px;
     max-width: 600px;
     width: 90%;
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-    width: 10px;
+    width: 12px;
 }
 
 ::-webkit-scrollbar-track {
-    background: rgba(10, 14, 39, 0.5);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    background: rgba(0, 0, 0, 0.3);
+    background-clip: content-box;
 }

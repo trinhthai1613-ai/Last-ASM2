@@ -67,16 +67,17 @@ public class EmployeeService {
         return roles.stream().anyMatch(r -> roleCode.equals(r.getRoleCode()));
     }
 
+    /**
+     * Kiểm tra có phải Manager không (Level 1 hoặc 2)
+     */
     public boolean isManager(int employeeID) {
-        return hasRole(employeeID, "MANAGER") ||
-               hasRole(employeeID, "DIVISION_LEADER") ||
-               hasRole(employeeID, "TEAM_LEADER");
+        List<Role> roles = roleDAO.getRolesByEmployeeId(employeeID);
+        return roles.stream().anyMatch(r -> r.getLevel() == 1 || r.getLevel() == 2);
     }
 
     /**
-     * Kiểm tra nhân viên có phải Senior Management (Level 1-2) không
-     * Level 1: CEO, ADMIN
-     * Level 2: DIV_LEADER, HR_MANAGER
+     * Kiểm tra có phải Senior Management không (Level 1 hoặc 2)
+     * Dùng để kiểm tra quyền xem Agenda và Duyệt đơn
      */
     public boolean isSeniorManagement(int employeeID) {
         List<Role> roles = roleDAO.getRolesByEmployeeId(employeeID);
@@ -84,61 +85,22 @@ public class EmployeeService {
     }
 
     /**
-     * Lấy Level thấp nhất (quyền cao nhất) của nhân viên
-     * @param employeeID
-     * @return Level (1=highest, 4=lowest), trả về 999 nếu không có role
+     * Kiểm tra có phải CEO không (chỉ Level 1)
+     * Dùng để kiểm tra quyền xem Agenda
      */
-    public int getEmployeeLevel(int employeeID) {
+    public boolean isCEO(int employeeID) {
         List<Role> roles = roleDAO.getRolesByEmployeeId(employeeID);
-        
-        if (roles == null || roles.isEmpty()) {
-            logger.warn("Employee {} has no roles assigned", employeeID);
-            return 999; // Không có role
-        }
-        
-        // Lấy level thấp nhất (quyền cao nhất)
-        int minLevel = roles.stream()
+        return roles.stream().anyMatch(r -> r.getLevel() == 1);
+    }
+
+    /**
+     * Lấy role level thấp nhất của employee (level càng thấp càng cao cấp)
+     */
+    public int getLowestRoleLevel(int employeeID) {
+        List<Role> roles = roleDAO.getRolesByEmployeeId(employeeID);
+        return roles.stream()
                 .mapToInt(Role::getLevel)
                 .min()
-                .orElse(999);
-        
-        logger.debug("Employee {} has level: {}", employeeID, minLevel);
-        return minLevel;
-    }
-
-    /**
-     * Kiểm tra có quyền xem Agenda (lịch nghỉ phép phòng ban)
-     * Chỉ Level 1-2 mới được xem
-     */
-    public boolean canViewAgenda(int employeeID) {
-        int level = getEmployeeLevel(employeeID);
-        return level <= 2;
-    }
-
-    /**
-     * Kiểm tra có quyền duyệt đơn nghỉ phép
-     * Chỉ Level 1-2 mới được duyệt
-     */
-    public boolean canApproveLeaveRequest(int employeeID) {
-        int level = getEmployeeLevel(employeeID);
-        return level <= 2;
-    }
-
-    /**
-     * Kiểm tra có quyền quản lý nhân viên
-     * Level 1-2 được quản lý
-     */
-    public boolean canManageEmployees(int employeeID) {
-        int level = getEmployeeLevel(employeeID);
-        return level <= 2;
-    }
-
-    /**
-     * Kiểm tra có quyền xem báo cáo
-     * Level 1-2 được xem
-     */
-    public boolean canViewReports(int employeeID) {
-        int level = getEmployeeLevel(employeeID);
-        return level <= 2;
+                .orElse(999); // Nếu không có role, trả về level rất cao (không có quyền)
     }
 }

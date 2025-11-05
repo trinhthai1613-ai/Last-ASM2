@@ -491,5 +491,34 @@ private void createDefaultLeaveQuotas(Connection conn, int employeeId) throws SQ
         
         return employee;
     }
+    // Thêm method này vào EmployeeDAO.java
+
+/**
+ * Lấy tất cả nhân viên đang hoạt động
+ */
+public List<Employee> getAllActiveEmployees() {
+    List<Employee> employees = new ArrayList<>();
+    String sql = "SELECT e.*, d.DivisionName " +
+                "FROM Employees e " +
+                "LEFT JOIN Divisions d ON e.DivisionID = d.DivisionID " +
+                "WHERE e.IsActive = 1 " +
+                "ORDER BY d.DivisionName, e.FullName";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         Statement stmt = conn.createStatement();
+         ResultSet rs = stmt.executeQuery(sql)) {
+        
+        while (rs.next()) {
+            employees.add(extractEmployeeFromResultSet(rs));
+        }
+        
+        logger.info("Found {} active employees", employees.size());
+        
+    } catch (SQLException e) {
+        logger.error("Error getting all active employees", e);
+    }
+    
+    return employees;
+}
     
 }

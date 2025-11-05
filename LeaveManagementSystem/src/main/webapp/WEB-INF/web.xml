@@ -64,6 +64,15 @@
     </servlet-mapping>
     
     <servlet>
+    <servlet-name>ExportServlet</servlet-name>
+    <servlet-class>com.company.lms.controller.ExportServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>ExportServlet</servlet-name>
+    <url-pattern>/export</url-pattern>
+</servlet-mapping>
+    
+    <servlet>
         <servlet-name>ProfileServlet</servlet-name>
         <servlet-class>com.company.lms.controller.ProfileServlet</servlet-class>
     </servlet>
@@ -89,6 +98,15 @@
         <servlet-name>ProfileUpdateServlet</servlet-name>
         <url-pattern>/profile/update</url-pattern>
     </servlet-mapping>
+    
+    <servlet>
+    <servlet-name>DetailLeaveRequestServlet</servlet-name>
+    <servlet-class>com.company.lms.controller.DetailLeaveRequestServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>DetailLeaveRequestServlet</servlet-name>
+    <url-pattern>/request/detail</url-pattern>
+</servlet-mapping>
     
     <servlet>
         <servlet-name>AgendaServlet</servlet-name>

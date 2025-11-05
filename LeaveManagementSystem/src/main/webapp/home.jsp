@@ -1,250 +1,268 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.company.lms.model.Employee" %>
+<%@ page import="com.company.lms.service.EmployeeService" %>
+<%
+Employee user = (Employee) session.getAttribute("user");
+if (user == null) {
+    response.sendRedirect(request.getContextPath() + "/login");
+    return;
+}
+
+EmployeeService employeeService = new EmployeeService();
+int roleLevel = employeeService.getLowestRoleLevel(user.getEmployeeID());
+boolean isCEO = (roleLevel == 1);
+boolean isSeniorManagement = (roleLevel == 1 || roleLevel == 2);
+%>
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang Chủ - Leave Management System</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/main.css">
+    <title>Trang chủ - Leave Management System</title>
     <style>
-        .dashboard-container {
-            max-width: 1200px;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #ffffff;
+            color: #1d1d1f;
+            -webkit-font-smoothing: antialiased;
+        }
+        .navbar {
+            background: #ffffff;
+            padding: 16px 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-container {
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #000000;
+            letter-spacing: -0.02em;
+        }
+        .user-menu { display: flex; align-items: center; gap: 15px; }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            overflow: hidden;
+        }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .user-avatar:hover { transform: scale(1.05); }
+        .user-info { display: flex; flex-direction: column; }
+        .user-name { font-weight: 500; font-size: 14px; }
+        .user-role { font-size: 12px; color: #6e6e73; }
+        .main-container { max-width: 1400px; margin: 0 auto; padding: 40px 30px; }
         .welcome-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
+            background: #f5f5f7;
+            border-radius: 18px;
+            padding: 40px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
-        .stats-grid {
+        .welcome-section h1 {
+            font-size: 32px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+        .welcome-section p { font-size: 16px; color: #6e6e73; }
+        .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
-        .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
+        .dashboard-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 28px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: pointer;
         }
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
         }
-        .stat-number {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #667eea;
+        .card-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin-bottom: 20px;
+            background: #000000;
         }
-        .stat-label {
-            color: #666;
-            margin-top: 10px;
+        .card-title { font-size: 17px; font-weight: 500; margin-bottom: 8px; }
+        .card-description { color: #6e6e73; font-size: 13px; line-height: 1.5; }
+        .card-value {
+            font-size: 32px;
+            font-weight: 600;
+            margin: 12px 0;
+            letter-spacing: -0.02em;
         }
-        .actions-grid {
+        .quick-actions {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
         }
         .action-btn {
-            display: block;
-            padding: 20px;
-            background: white;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            text-align: center;
+            background: #000000;
+            border: none;
+            border-radius: 980px;
+            padding: 14px 24px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             text-decoration: none;
-            color: #667eea;
-            font-weight: 600;
-            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            letter-spacing: -0.01em;
         }
         .action-btn:hover {
-            background: #667eea;
-            color: white;
-            transform: scale(1.05);
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
-        .action-btn.primary {
-            background: #667eea;
-            color: white;
+        .action-btn-primary {
+            background: #34c759;
         }
-        .action-btn.primary:hover {
-            background: #5568d3;
+        .btn-logout {
+            background: #f5f5f7;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: #1d1d1f;
+            padding: 8px 16px;
+            border-radius: 980px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            font-weight: 500;
+            font-size: 13px;
         }
-        .action-btn.manager-only {
-            border-color: #f59e0b;
-            color: #f59e0b;
+        .btn-logout:hover {
+            background: #e8e8ed;
         }
-        .action-btn.manager-only:hover {
-            background: #f59e0b;
-            color: white;
-        }
-        .permission-badge {
-            display: inline-block;
-            padding: 5px 15px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            font-size: 0.9em;
-            margin-top: 10px;
-        }
-        .alert {
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        @media (max-width: 768px) {
+            .dashboard-grid, .quick-actions { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <jsp:include page="/WEB-INF/includes/header.jsp" />
-
-    <div class="dashboard-container">
-        <!-- Welcome Section -->
-        <div class="welcome-section">
-            <h1>Xin chào, ${user.fullName}!</h1>
-            <p>Chào mừng bạn đến với Hệ thống Quản lý Nghỉ phép</p>
-            
-            <!-- Hiển thị Level/Role -->
-            <c:choose>
-                <c:when test="${employeeLevel == 1}">
-                    <span class="permission-badge">👑 Cấp Quản Trị (Level 1 - CEO/Admin)</span>
-                </c:when>
-                <c:when test="${employeeLevel == 2}">
-                    <span class="permission-badge">🎯 Quản Lý Cấp Cao (Level 2 - Manager)</span>
-                </c:when>
-                <c:when test="${employeeLevel == 3}">
-                    <span class="permission-badge">📋 Trưởng Nhóm (Level 3 - Team Leader)</span>
-                </c:when>
-                <c:when test="${employeeLevel == 4}">
-                    <span class="permission-badge">👤 Nhân Viên (Level 4 - Employee)</span>
-                </c:when>
-                <c:otherwise>
-                    <span class="permission-badge">⚠️ Chưa phân quyền</span>
-                </c:otherwise>
-            </c:choose>
-        </div>
-
-        <!-- Alert Messages -->
-        <c:if test="${not empty sessionScope.success}">
-            <div class="alert alert-success">
-                ${sessionScope.success}
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                🚀 Leave System
             </div>
-            <c:remove var="success" scope="session"/>
-        </c:if>
-
-        <c:if test="${not empty sessionScope.error}">
-            <div class="alert alert-error">
-                ${sessionScope.error}
-            </div>
-            <c:remove var="error" scope="session"/>
-        </c:if>
-
-        <!-- Statistics Grid -->
-        <div class="stats-grid">
-            <!-- Đơn đã duyệt -->
-            <div class="stat-card">
-                <div class="stat-number">${approvedCount}</div>
-                <div class="stat-label">Đơn Đã Duyệt</div>
-            </div>
-
-            <!-- Đơn đang chờ -->
-            <div class="stat-card">
-                <div class="stat-number">${pendingCount}</div>
-                <div class="stat-label">Đơn Đang Chờ</div>
-            </div>
-
-            <!-- Ngày phép còn lại -->
-            <div class="stat-card">
-                <div class="stat-number">${remainingDays}</div>
-                <div class="stat-label">Ngày Phép Còn Lại</div>
-            </div>
-
-            <!-- Ngày phép đã sử dụng -->
-            <div class="stat-card">
-                <div class="stat-number">${usedDays}</div>
-                <div class="stat-label">Ngày Phép Đã Dùng</div>
-            </div>
-
-            <!-- THÊM CARD NÀY CHO MANAGER (LEVEL 1-2) -->
-            <c:if test="${canApprove}">
-                <div class="stat-card" style="border: 2px solid #f59e0b;">
-                    <div class="stat-number" style="color: #f59e0b;">${pendingApprovalCount}</div>
-                    <div class="stat-label">🔔 Đơn Cần Duyệt</div>
+            <div class="user-menu">
+                <div class="user-info">
+                    <div class="user-name"><%= user.getFullName() %></div>
+                    <div class="user-role"><%= user.getDivisionName() != null ? user.getDivisionName() : "Nhân viên" %></div>
                 </div>
-            </c:if>
+                <div class="user-avatar">
+                    <% if (user.getAvatarPath() != null && !user.getAvatarPath().isEmpty()) { %>
+                        <img src="${pageContext.request.contextPath}/images/uploads/<%= user.getAvatarPath() %>" alt="Avatar">
+                    <% } else { %>
+                        <%= user.getFullName().substring(0, 1).toUpperCase() %>
+                    <% } %>
+                </div>
+                <button class="btn-logout" onclick="logout()">
+                    Đăng xuất
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="welcome-section">
+            <h1>👋 Xin chào, <%= user.getFullName() %>!</h1>
+            <p>Chào mừng bạn đến với Hệ thống quản lý nghỉ phép. Hãy bắt đầu quản lý đơn nghỉ phép của bạn ngay hôm nay.</p>
         </div>
 
-        <!-- Actions Grid -->
-        <div class="actions-grid">
-            <!-- Tạo đơn nghỉ phép - TẤT CẢ đều được -->
-            <a href="${pageContext.request.contextPath}/request/create" class="action-btn primary">
-                ➕ Tạo Đơn Nghỉ Phép
-            </a>
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <div class="card-icon">✓</div>
+                <div class="card-title">Đơn đã duyệt</div>
+                <div class="card-value"><%= request.getAttribute("approvedCount") != null ? request.getAttribute("approvedCount") : 0 %></div>
+                <div class="card-description">Tổng số đơn nghỉ phép đã được duyệt</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="card-icon">⏱</div>
+                <div class="card-title">Đang chờ</div>
+                <div class="card-value"><%= request.getAttribute("pendingCount") != null ? request.getAttribute("pendingCount") : 0 %></div>
+                <div class="card-description">Đơn đang chờ xét duyệt</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="card-icon">🏖</div>
+                <div class="card-title">Ngày phép còn lại</div>
+                <div class="card-value"><%= request.getAttribute("remainingDays") != null ? request.getAttribute("remainingDays") : 0 %></div>
+                <div class="card-description">Số ngày phép bạn có thể sử dụng</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="card-icon">📊</div>
+                <div class="card-title">Đã sử dụng</div>
+                <div class="card-value"><%= request.getAttribute("usedDays") != null ? request.getAttribute("usedDays") : 0 %></div>
+                <div class="card-description">Số ngày phép đã sử dụng năm nay</div>
+            </div>
+        </div>
 
-            <!-- Xem đơn của tôi - TẤT CẢ đều được -->
+        <div class="quick-actions">
+            <% if (isSeniorManagement) { %>
+            <a href="${pageContext.request.contextPath}/request/pending" class="action-btn action-btn-primary">
+                Duyệt đơn nghỉ phép
+            </a>
+            <% } %>
+            <a href="${pageContext.request.contextPath}/request/create" class="action-btn">
+                Tạo đơn nghỉ phép
+            </a>
             <a href="${pageContext.request.contextPath}/request/list" class="action-btn">
-                📋 Xem Đơn Của Tôi
+                Xem đơn của tôi
             </a>
-
-            <!-- Xem hồ sơ - TẤT CẢ đều được -->
             <a href="${pageContext.request.contextPath}/profile" class="action-btn">
-                👤 Hồ Sơ Cá Nhân
+                Thông tin cá nhân
             </a>
-
-            <!-- DUYỆT ĐơN - CHỈ LEVEL 1-2 -->
-            <c:if test="${canApprove}">
-                <a href="${pageContext.request.contextPath}/request/pending" class="action-btn manager-only">
-                    ✅ Duyệt Đơn Nghỉ Phép
-                </a>
-            </c:if>
-
-            <!-- XEM AGENDA - CHỈ LEVEL 1-2 -->
-            <c:if test="${canViewAgenda}">
-                <a href="${pageContext.request.contextPath}/agenda" class="action-btn manager-only">
-                    📅 Xem Lịch Nghỉ Phép
-                </a>
-            </c:if>
-
-            <!-- QUẢN LÝ NHÂN VIÊN - CHỈ LEVEL 1-2 -->
-            <c:if test="${canManageEmployees}">
-                <a href="${pageContext.request.contextPath}/employee/manage" class="action-btn manager-only">
-                    👥 Quản Lý Nhân Viên
-                </a>
-            </c:if>
-
-            <!-- XEM BÁO CÁO - CHỈ LEVEL 1-2 -->
-            <c:if test="${canViewReports}">
-                <a href="${pageContext.request.contextPath}/report/view" class="action-btn manager-only">
-                    📊 Xem Báo Cáo
-                </a>
-            </c:if>
-        </div>
-
-        <!-- Thông tin phân quyền (debug - có thể xóa sau) -->
-        <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px; font-size: 0.9em;">
-            <strong>🔒 Thông tin phân quyền:</strong><br>
-            Level: ${employeeLevel} |
-            Duyệt đơn: ${canApprove ? "✅" : "❌"} |
-            Xem agenda: ${canViewAgenda ? "✅" : "❌"} |
-            Quản lý NV: ${canManageEmployees ? "✅" : "❌"} |
-            Xem báo cáo: ${canViewReports ? "✅" : "❌"}
+            <% if (isCEO) { %>
+            <a href="${pageContext.request.contextPath}/agenda" class="action-btn">
+                Lịch nghỉ phép
+            </a>
+            <% } %>
         </div>
     </div>
 
-    <jsp:include page="/WEB-INF/includes/footer.jsp" />
+    <script>
+        function logout() {
+            if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+                window.location.href = '${pageContext.request.contextPath}/logout';
+            }
+        }
+    </script>
 </body>
 </html>
