@@ -1,22 +1,24 @@
 package com.company.lms.controller;
 
 import com.company.lms.dao.LeaveRequestDAO;
+import com.company.lms.dao.RoleDAO;
 import com.company.lms.model.Employee;
 import com.company.lms.model.LeaveRequest;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 
 public class DetailLeaveRequestServlet extends HttpServlet {
     private static final Logger logger = LoggerFactory.getLogger(DetailLeaveRequestServlet.class);
     private LeaveRequestDAO leaveRequestDAO;
+    private RoleDAO roleDAO;
     
     @Override
     public void init() throws ServletException {
         leaveRequestDAO = new LeaveRequestDAO();
+        roleDAO = new RoleDAO();
     }
     
     @Override
@@ -46,8 +48,25 @@ public class DetailLeaveRequestServlet extends HttpServlet {
                 return;
             }
             
-            // Kiểm tra quyền xem: chỉ xem được đơn của mình (hoặc có thể mở rộng cho manager)
-            if (leaveRequest.getEmployeeID() != user.getEmployeeID()) {
+            // ✅ FIX: Kiểm tra quyền xem theo role
+            int roleLevel = roleDAO.getHighestRoleLevel(user.getEmployeeID());
+            boolean canView = false;
+            
+            if (roleLevel <= 1) {
+                // CEO/Admin: xem tất cả
+                canView = true;
+            } else if (roleLevel == 2) {
+                // Manager: xem trong phòng ban
+                canView = (user.getDivisionID() == leaveRequest.getEmployeeID()); // Cần lấy divisionID từ request
+            } else if (roleLevel == 3) {
+                // Team Lead: xem nhân viên dưới quyền
+                canView = (leaveRequest.getEmployeeID() == user.getEmployeeID());
+            } else {
+                // Employee: chỉ xem của mình
+                canView = (leaveRequest.getEmployeeID() == user.getEmployeeID());
+            }
+            
+            if (!canView) {
                 session.setAttribute("error", "Bạn không có quyền xem đơn này!");
                 response.sendRedirect(request.getContextPath() + "/request/list");
                 return;

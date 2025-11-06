@@ -166,6 +166,7 @@
                             <th>Nhân viên</th>
                             <th>Giá trị cũ</th>
                             <th>Giá trị mới</th>
+                            <th>Ghi chú</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -188,6 +189,7 @@
                                 </td>
                                 <td><%= log.getOldValue() != null ? log.getOldValue() : "-" %></td>
                                 <td><%= log.getNewValue() != null ? log.getNewValue() : "-" %></td>
+                                <td><%= log.getNote() != null ? log.getNote() : "Trống" %></td>
                             </tr>
                         <% } %>
                     </tbody>

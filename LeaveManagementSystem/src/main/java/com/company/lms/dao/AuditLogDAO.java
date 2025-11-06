@@ -68,6 +68,7 @@ public class AuditLogDAO {
                 log.setIPAddress(rs.getString("IPAddress"));
                 log.setUserAgent(rs.getString("UserAgent"));
                 log.setCreatedAt(rs.getTimestamp("CreatedAt"));
+                log.setNote(rs.getString("Note"));
                 logs.add(log);
             }
             
