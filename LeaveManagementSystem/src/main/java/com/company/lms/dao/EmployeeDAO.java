@@ -360,7 +360,7 @@ private void createDefaultLeaveQuotas(Connection conn, int employeeId) throws SQ
         return employees;
     }
     
-    private void updateLastLogin(int employeeID) {
+    public void updateLastLogin(int employeeID) {
         String sql = "UPDATE Employees SET LastLogin = GETDATE() WHERE EmployeeID = ?";
         
         try (Connection conn = DatabaseConnection.getConnection();
@@ -519,6 +519,110 @@ public List<Employee> getAllActiveEmployees() {
     }
     
     return employees;
+}
+public Employee findByEmail(String email) {
+    String sql = "SELECT e.*, d.DivisionName " +
+                "FROM Employees e " +
+                "LEFT JOIN Divisions d ON e.DivisionID = d.DivisionID " +
+                "WHERE e.Email = ?";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        stmt.setString(1, email);
+        ResultSet rs = stmt.executeQuery();
+        
+        if (rs.next()) {
+            return extractEmployeeFromResultSet(rs);
+        }
+        
+    } catch (SQLException e) {
+        logger.error("Error finding employee by email", e);
+    }
+    
+    return null;
+}
+
+/**
+ * Tạo employee mới với Google Authentication
+ */
+public boolean createEmployeeWithGoogleAuth(Employee employee) {
+    String sql = "INSERT INTO Employees " +
+                "(EmployeeCode, Username, PasswordHash, Email, FullName, " +
+                "DivisionID, IsActive, AvatarPath, HireDate) " +
+                "VALUES (?, ?, ?, ?, ?, ?, 1, ?, GETDATE())";
+    
+    Connection conn = null;
+    PreparedStatement stmt = null;
+    
+    try {
+        conn = DatabaseConnection.getConnection();
+        conn.setAutoCommit(false);
+        
+        stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        
+        stmt.setString(1, employee.getEmployeeCode());
+        stmt.setString(2, employee.getUsername());
+        stmt.setString(3, employee.getPassword()); // Đã là hash từ Google ID
+        stmt.setString(4, employee.getEmail());
+        stmt.setString(5, employee.getFullName());
+        stmt.setInt(6, employee.getDivisionID());
+        
+        if (employee.getAvatarPath() != null) {
+            stmt.setString(7, employee.getAvatarPath());
+        } else {
+            stmt.setNull(7, Types.VARCHAR);
+        }
+        
+        int affected = stmt.executeUpdate();
+        
+        if (affected > 0) {
+            ResultSet rs = stmt.getGeneratedKeys();
+            if (rs.next()) {
+                int newEmployeeId = rs.getInt(1);
+                employee.setEmployeeID(newEmployeeId);
+                
+                // Gán role mặc định: EMPLOYEE (RoleID = 4)
+                String roleSQL = "INSERT INTO EmployeeRoles (EmployeeID, RoleID, IsActive) VALUES (?, 4, 1)";
+                try (PreparedStatement roleStmt = conn.prepareStatement(roleSQL)) {
+                    roleStmt.setInt(1, newEmployeeId);
+                    roleStmt.executeUpdate();
+                }
+                
+                // Tạo quota nghỉ phép mặc định
+                createDefaultLeaveQuotas(conn, newEmployeeId);
+            }
+            
+            conn.commit();
+            logger.info("Employee created via Google Auth: {} (ID: {})", 
+                       employee.getUsername(), employee.getEmployeeID());
+            return true;
+        }
+        
+        conn.rollback();
+        return false;
+        
+    } catch (SQLException e) {
+        logger.error("Error creating employee with Google Auth", e);
+        if (conn != null) {
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                logger.error("Error rolling back", ex);
+            }
+        }
+        return false;
+    } finally {
+        try {
+            if (stmt != null) stmt.close();
+            if (conn != null) {
+                conn.setAutoCommit(true);
+                conn.close();
+            }
+        } catch (SQLException e) {
+            logger.error("Error closing resources", e);
+        }
+    }
 }
     
 }
