@@ -134,15 +134,29 @@
             font-weight: 600;
             font-size: 13px;
         }
-        tr:hover { background: #f5f5f7; }
+        tbody tr {
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        tbody tr:hover { 
+            background: #f5f5f7;
+            cursor: pointer;
+        }
         .request-code {
+            display: inline-block;
+            padding: 6px 14px;
+            background: #f5f5f7;
             color: #000000;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            font-size: 13px;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            text-decoration: none;
+            letter-spacing: -0.01em;
         }
         .request-code:hover {
-            text-decoration: underline;
+            background: #000000;
+            color: #ffffff;
+            transform: scale(1.05);
         }
         .status {
             display: inline-block;
@@ -228,10 +242,11 @@
                             if ("Approved".equals(req.getStatus())) statusClass = "status-approved";
                             else if ("Rejected".equals(req.getStatus())) statusClass = "status-rejected";
                         %>
-                            <tr>
+                            <tr onclick="window.location.href='${pageContext.request.contextPath}/request/detail?id=<%= req.getRequestID() %>'">
                                 <td>
                                     <a href="${pageContext.request.contextPath}/request/detail?id=<%= req.getRequestID() %>" 
-                                       class="request-code">
+                                       class="request-code"
+                                       onclick="event.stopPropagation()">
                                         <%= req.getRequestCode() %>
                                     </a>
                                 </td>
