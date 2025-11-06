@@ -2,6 +2,7 @@ package com.company.lms.controller;
 
 import com.company.lms.dao.LeaveRequestDAO;
 import com.company.lms.dao.RoleDAO;
+import com.company.lms.dao.EmployeeDAO;
 import com.company.lms.model.Employee;
 import com.company.lms.model.LeaveRequest;
 import jakarta.servlet.ServletException;
@@ -14,11 +15,13 @@ public class DetailLeaveRequestServlet extends HttpServlet {
     private static final Logger logger = LoggerFactory.getLogger(DetailLeaveRequestServlet.class);
     private LeaveRequestDAO leaveRequestDAO;
     private RoleDAO roleDAO;
+    private EmployeeDAO employeeDAO;
     
     @Override
     public void init() throws ServletException {
         leaveRequestDAO = new LeaveRequestDAO();
         roleDAO = new RoleDAO();
+        employeeDAO = new EmployeeDAO();
     }
     
     @Override
@@ -48,7 +51,7 @@ public class DetailLeaveRequestServlet extends HttpServlet {
                 return;
             }
             
-            // ✅ FIX: Kiểm tra quyền xem theo role
+            // ✅ FIX: Kiểm tra quyền xem
             int roleLevel = roleDAO.getHighestRoleLevel(user.getEmployeeID());
             boolean canView = false;
             
@@ -57,16 +60,21 @@ public class DetailLeaveRequestServlet extends HttpServlet {
                 canView = true;
             } else if (roleLevel == 2) {
                 // Manager: xem trong phòng ban
-                canView = (user.getDivisionID() == leaveRequest.getEmployeeID()); // Cần lấy divisionID từ request
+                Employee requestEmployee = employeeDAO.getEmployeeById(leaveRequest.getEmployeeID());
+                canView = (requestEmployee != null && requestEmployee.getDivisionID() == user.getDivisionID());
             } else if (roleLevel == 3) {
-                // Team Lead: xem nhân viên dưới quyền
-                canView = (leaveRequest.getEmployeeID() == user.getEmployeeID());
+                // Team Lead: xem nhân viên dưới quyền hoặc của mình
+                Employee requestEmployee = employeeDAO.getEmployeeById(leaveRequest.getEmployeeID());
+                canView = (leaveRequest.getEmployeeID() == user.getEmployeeID()) ||
+                         (requestEmployee != null && requestEmployee.getManagerID() != null && 
+                          requestEmployee.getManagerID() == user.getEmployeeID());
             } else {
                 // Employee: chỉ xem của mình
                 canView = (leaveRequest.getEmployeeID() == user.getEmployeeID());
             }
             
             if (!canView) {
+                logger.warn("Access denied: User {} tried to view request {}", user.getEmployeeID(), requestId);
                 session.setAttribute("error", "Bạn không có quyền xem đơn này!");
                 response.sendRedirect(request.getContextPath() + "/request/list");
                 return;

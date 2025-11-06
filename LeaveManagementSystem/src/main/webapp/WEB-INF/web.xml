@@ -9,6 +9,15 @@
     <display-name>Leave Management System</display-name>
     
     <!-- Servlet Mappings -->
+    <!-- Thêm servlet mapping -->
+<servlet>
+    <servlet-name>UpdateLeaveRequestServlet</servlet-name>
+    <servlet-class>com.company.lms.controller.UpdateLeaveRequestServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>UpdateLeaveRequestServlet</servlet-name>
+    <url-pattern>/request/update</url-pattern>
+</servlet-mapping>
     <servlet>
         <servlet-name>LoginServlet</servlet-name>
         <servlet-class>com.company.lms.controller.LoginServlet</servlet-class>

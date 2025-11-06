@@ -11,7 +11,29 @@ import java.util.List;
 
 public class RoleDAO {
     private static final Logger logger = LoggerFactory.getLogger(RoleDAO.class);
+    // Thêm vào RoleDAO.java
+public int getHighestRoleLevel(int employeeID) {
+    String sql = "SELECT MIN(r.Level) as MinLevel " +
+                "FROM Roles r " +
+                "INNER JOIN EmployeeRoles er ON r.RoleID = er.RoleID " +
+                "WHERE er.EmployeeID = ? AND er.IsActive = 1 AND r.IsActive = 1";
     
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        stmt.setInt(1, employeeID);
+        ResultSet rs = stmt.executeQuery();
+        
+        if (rs.next()) {
+            int level = rs.getInt("MinLevel");
+            return rs.wasNull() ? 4 : level; // Default: Employee
+        }
+    } catch (SQLException e) {
+        logger.error("Error getting highest role level", e);
+    }
+    
+    return 4; // Default: Employee
+}
     public List<Role> getAllRoles() {
         List<Role> roles = new ArrayList<>();
         String sql = "SELECT * FROM Roles WHERE IsActive = 1 ORDER BY Level";

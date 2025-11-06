@@ -2,6 +2,7 @@ package com.company.lms.dao;
 
 import com.company.lms.model.LeaveRequest;
 import com.company.lms.util.DatabaseConnection;
+import com.company.lms.model.LeaveReasonTemplate;
 import org.slf4j.Logger;
 
 import java.math.BigDecimal;
@@ -111,6 +112,7 @@ private LeaveRequest mapResultSetToLeaveRequest(ResultSet rs) throws SQLExceptio
     
     return request;
 }
+
 
 public int countAllLeaveRequestsByStatus(String status) {
     String sql = "SELECT COUNT(*) as total FROM LeaveRequests WHERE Status = ?";
@@ -582,5 +584,31 @@ public int countLeaveRequestsByStatus(int employeeID, String status) {
     }
     
     return 0;
+}
+public List<LeaveReasonTemplate> getTemplatesByLeaveType(int leaveTypeId) {
+    List<LeaveReasonTemplate> templates = new ArrayList<>();
+    String sql = "{CALL sp_GetLeaveReasonTemplates(?)}";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         CallableStatement stmt = conn.prepareCall(sql)) {
+        
+        stmt.setInt(1, leaveTypeId);
+        ResultSet rs = stmt.executeQuery();
+        
+        while (rs.next()) {
+            LeaveReasonTemplate template = new LeaveReasonTemplate();
+            template.setTemplateID(rs.getInt("TemplateID"));
+            template.setLeaveTypeID(rs.getInt("LeaveTypeID"));
+            template.setReasonText(rs.getString("ReasonText"));
+            template.setDescription(rs.getString("Description"));
+            template.setUsageCount(rs.getInt("UsageCount"));
+            templates.add(template);
+        }
+        
+    } catch (SQLException e) {
+        logger.error("Error getting templates by leave type", e);
+    }
+    
+    return templates;
 }
 }
