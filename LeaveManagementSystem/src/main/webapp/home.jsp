@@ -156,6 +156,9 @@ boolean isSeniorManagement = (roleLevel == 1 || roleLevel == 2);
         .action-btn-primary {
             background: #34c759;
         }
+        .action-btn-warning {
+            background: #ff9500;
+        }
         .btn-logout {
             background: #f5f5f7;
             border: 1px solid rgba(0, 0, 0, 0.1);
@@ -208,6 +211,32 @@ boolean isSeniorManagement = (roleLevel == 1 || roleLevel == 2);
         </div>
 
         <div class="dashboard-grid">
+            <% if (isCEO) { %>
+            <div class="dashboard-card">
+                <div class="card-icon">✓</div>
+                <div class="card-title">Đơn đã duyệt</div>
+                <div class="card-value"><%= request.getAttribute("approvedCount") != null ? request.getAttribute("approvedCount") : 0 %></div>
+                <div class="card-description">Tổng số đơn đã được duyệt trong hệ thống</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="card-icon">⏱</div>
+                <div class="card-title">Đang chờ</div>
+                <div class="card-value"><%= request.getAttribute("pendingCount") != null ? request.getAttribute("pendingCount") : 0 %></div>
+                <div class="card-description">Đơn đang chờ xét duyệt trong hệ thống</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="card-icon">📊</div>
+                <div class="card-title">Audit Logs</div>
+                <div class="card-value"><%= request.getAttribute("remainingDays") != null ? request.getAttribute("remainingDays") : 0 %></div>
+                <div class="card-description">Tổng số bản ghi hệ thống</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="card-icon">📝</div>
+                <div class="card-title">Hôm nay</div>
+                <div class="card-value"><%= request.getAttribute("usedDays") != null ? request.getAttribute("usedDays") : 0 %></div>
+                <div class="card-description">Số bản ghi audit hôm nay</div>
+            </div>
+            <% } else { %>
             <div class="dashboard-card">
                 <div class="card-icon">✓</div>
                 <div class="card-title">Đơn đã duyệt</div>
@@ -221,7 +250,7 @@ boolean isSeniorManagement = (roleLevel == 1 || roleLevel == 2);
                 <div class="card-description">Đơn đang chờ xét duyệt</div>
             </div>
             <div class="dashboard-card">
-                <div class="card-icon">🏖</div>
+                <div class="card-icon">🖐</div>
                 <div class="card-title">Ngày phép còn lại</div>
                 <div class="card-value"><%= request.getAttribute("remainingDays") != null ? request.getAttribute("remainingDays") : 0 %></div>
                 <div class="card-description">Số ngày phép bạn có thể sử dụng</div>
@@ -232,6 +261,7 @@ boolean isSeniorManagement = (roleLevel == 1 || roleLevel == 2);
                 <div class="card-value"><%= request.getAttribute("usedDays") != null ? request.getAttribute("usedDays") : 0 %></div>
                 <div class="card-description">Số ngày phép đã sử dụng năm nay</div>
             </div>
+            <% } %>
         </div>
 
         <div class="quick-actions">
@@ -240,15 +270,32 @@ boolean isSeniorManagement = (roleLevel == 1 || roleLevel == 2);
                 Duyệt đơn nghỉ phép
             </a>
             <% } %>
+            
+            <% if (isCEO) { %>
+            <a href="${pageContext.request.contextPath}/audit/logs" class="action-btn action-btn-warning">
+                📊 Xem Audit Logs
+            </a>
+            <% } %>
+            
+            <% if (isSeniorManagement) { %>
+            <a href="${pageContext.request.contextPath}/request/employee-requests" class="action-btn">
+                👥 Xem đơn nhân viên
+            </a>
+            <% } %>
+            
+            <% if (!isCEO) { %>
             <a href="${pageContext.request.contextPath}/request/create" class="action-btn">
                 Tạo đơn nghỉ phép
             </a>
             <a href="${pageContext.request.contextPath}/request/list" class="action-btn">
                 Xem đơn của tôi
             </a>
+            <% } %>
+            
             <a href="${pageContext.request.contextPath}/profile" class="action-btn">
                 Thông tin cá nhân
             </a>
+            
             <% if (isCEO) { %>
             <a href="${pageContext.request.contextPath}/agenda" class="action-btn">
                 Lịch nghỉ phép

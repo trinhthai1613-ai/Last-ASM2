@@ -205,6 +205,25 @@ public class LeaveRequest {
                 return status;
         }
     }
+    // Thêm vào model LeaveRequest.java
+private String employeeCode;
+private String divisionName;
+
+public String getEmployeeCode() {
+    return employeeCode;
+}
+
+public void setEmployeeCode(String employeeCode) {
+    this.employeeCode = employeeCode;
+}
+
+public String getDivisionName() {
+    return divisionName;
+}
+
+public void setDivisionName(String divisionName) {
+    this.divisionName = divisionName;
+}
     
     @Override
     public String toString() {

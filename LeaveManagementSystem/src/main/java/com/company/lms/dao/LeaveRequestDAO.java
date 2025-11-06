@@ -14,6 +14,121 @@ import org.slf4j.LoggerFactory;
 public class LeaveRequestDAO {
     private static final Logger logger = LoggerFactory.getLogger(LeaveRequestDAO.class);
     
+    // Thêm vào LeaveRequestDAO.java
+
+public List<LeaveRequest> getAllLeaveRequests() throws SQLException {
+    List<LeaveRequest> requests = new ArrayList<>();
+    String sql = "SELECT * FROM vw_LeaveRequestsFull ORDER BY CreatedAt DESC";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        ResultSet rs = stmt.executeQuery();
+        while (rs.next()) {
+            requests.add(mapResultSetToLeaveRequest(rs));
+        }
+    }
+    
+    return requests;
+}
+
+public List<LeaveRequest> getLeaveRequestsByDivision(int divisionId) throws SQLException {
+    List<LeaveRequest> requests = new ArrayList<>();
+    String sql = "SELECT * FROM vw_LeaveRequestsFull WHERE DivisionID = ? ORDER BY CreatedAt DESC";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        stmt.setInt(1, divisionId);
+        ResultSet rs = stmt.executeQuery();
+        while (rs.next()) {
+            requests.add(mapResultSetToLeaveRequest(rs));
+        }
+    }
+    
+    return requests;
+}
+// Thêm method này vào LeaveRequestDAO.java (nếu chưa có)
+
+/**
+ * Map ResultSet từ view vw_LeaveRequestsFull
+ */
+private LeaveRequest mapResultSetToLeaveRequest(ResultSet rs) throws SQLException {
+    LeaveRequest request = new LeaveRequest();
+    
+    // Từ vw_LeaveRequestsFull
+    request.setRequestID(rs.getInt("RequestID"));
+    request.setRequestCode(rs.getString("RequestCode"));
+    request.setEmployeeID(rs.getInt("EmployeeID"));
+    request.setLeaveTypeID(rs.getInt("LeaveTypeID"));
+    
+    if (rs.getDate("StartDate") != null) {
+        request.setStartDate(rs.getDate("StartDate").toLocalDate());
+    }
+    
+    if (rs.getDate("EndDate") != null) {
+        request.setEndDate(rs.getDate("EndDate").toLocalDate());
+    }
+    
+    request.setTotalDays(rs.getBigDecimal("TotalDays"));
+    
+    // ReasonTemplateID - có thể null
+    int templateID = rs.getInt("ReasonTemplateID");
+    if (!rs.wasNull()) {
+        request.setReasonTemplateID(templateID);
+    }
+    
+    request.setCustomReason(rs.getString("CustomReason"));
+    request.setReason(rs.getString("FinalReason")); // Từ view
+    request.setStatus(rs.getString("Status"));
+    
+    // ProcessedBy - có thể null
+    int processedBy = rs.getInt("ProcessedByID");
+    if (!rs.wasNull()) {
+        request.setProcessedBy(processedBy);
+    }
+    
+    if (rs.getTimestamp("ProcessedDate") != null) {
+        request.setProcessedDate(rs.getTimestamp("ProcessedDate").toLocalDateTime());
+    }
+    
+    request.setProcessedNote(rs.getString("ProcessedNote"));
+    
+    if (rs.getTimestamp("CreatedAt") != null) {
+        request.setCreatedAt(rs.getTimestamp("CreatedAt").toLocalDateTime());
+    }
+    
+    if (rs.getTimestamp("UpdatedAt") != null) {
+        request.setUpdatedAt(rs.getTimestamp("UpdatedAt").toLocalDateTime());
+    }
+    
+    // Thông tin từ JOIN
+    request.setEmployeeCode(rs.getString("EmployeeCode"));
+    request.setEmployeeName(rs.getString("EmployeeName"));
+    request.setDivisionName(rs.getString("DivisionName"));
+    request.setLeaveTypeName(rs.getString("LeaveTypeName"));
+    request.setProcessedByName(rs.getString("ProcessedByName"));
+    
+    return request;
+}
+
+public int countAllLeaveRequestsByStatus(String status) {
+    String sql = "SELECT COUNT(*) as total FROM LeaveRequests WHERE Status = ?";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        stmt.setString(1, status);
+        ResultSet rs = stmt.executeQuery();
+        if (rs.next()) {
+            return rs.getInt("total");
+        }
+    } catch (SQLException e) {
+        logger.error("Error counting leave requests", e);
+    }
+    
+    return 0;
+}
     public boolean createLeaveRequest(LeaveRequest request) {
         String sql = "{CALL sp_CreateLeaveRequest(?, ?, ?, ?, ?, ?, ?)}";
         

@@ -17,7 +17,7 @@
         <servlet-name>LoginServlet</servlet-name>
         <url-pattern>/login</url-pattern>
     </servlet-mapping>
-
+    
     <servlet>
         <servlet-name>RegisterServlet</servlet-name>
         <servlet-class>com.company.lms.controller.RegisterServlet</servlet-class>
@@ -26,7 +26,25 @@
         <servlet-name>RegisterServlet</servlet-name>
         <url-pattern>/register</url-pattern>
     </servlet-mapping>
-    
+    <!-- Audit Logs -->
+<servlet>
+    <servlet-name>AuditLogsServlet</servlet-name>
+    <servlet-class>com.company.lms.controller.AuditLogsServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>AuditLogsServlet</servlet-name>
+    <url-pattern>/audit/logs</url-pattern>
+</servlet-mapping>
+
+<!-- Employee Leave Requests -->
+<servlet>
+    <servlet-name>EmployeeLeaveRequestServlet</servlet-name>
+    <servlet-class>com.company.lms.controller.EmployeeLeaveRequestServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>EmployeeLeaveRequestServlet</servlet-name>
+    <url-pattern>/request/employee-requests</url-pattern>
+</servlet-mapping>
     <servlet>
         <servlet-name>HomeServlet</servlet-name>
         <servlet-class>com.company.lms.controller.HomeServlet</servlet-class>

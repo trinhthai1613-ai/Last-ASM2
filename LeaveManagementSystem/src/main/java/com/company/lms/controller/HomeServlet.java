@@ -3,27 +3,27 @@ package com.company.lms.controller;
 import com.company.lms.dao.LeaveRequestDAO;
 import com.company.lms.dao.EmployeeDAO;
 import com.company.lms.model.Employee;
-import com.company.lms.model.LeaveRequest;
+import com.company.lms.service.EmployeeService;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.*;
-import java.util.List;
 
 public class HomeServlet extends HttpServlet {
     
     private static final Logger logger = LoggerFactory.getLogger(HomeServlet.class);
     private LeaveRequestDAO leaveRequestDAO;
     private EmployeeDAO employeeDAO;
+    private EmployeeService employeeService;
     
     @Override
     public void init() throws ServletException {
         leaveRequestDAO = new LeaveRequestDAO();
         employeeDAO = new EmployeeDAO();
+        employeeService = new EmployeeService();
     }
     
     @Override
@@ -37,33 +37,48 @@ public class HomeServlet extends HttpServlet {
         }
         
         Employee user = (Employee) session.getAttribute("user");
+        int roleLevel = employeeService.getLowestRoleLevel(user.getEmployeeID());
         
         try {
-            // 1. Lấy số đơn đã duyệt
-            int approvedCount = leaveRequestDAO.countLeaveRequestsByStatus(
-                user.getEmployeeID(), "Approved");
-            
-            // 2. Lấy số đơn đang chờ
-            int pendingCount = leaveRequestDAO.countLeaveRequestsByStatus(
-                user.getEmployeeID(), "InProgress");
-            
-            // 3. Lấy thông tin leave quota (ngày phép còn lại và đã sử dụng)
-            DashboardStats stats = getLeaveQuotaStats(user.getEmployeeID());
-            
-            // Set attributes để JSP hiển thị
-            request.setAttribute("approvedCount", approvedCount);
-            request.setAttribute("pendingCount", pendingCount);
-            request.setAttribute("remainingDays", stats.remainingDays);
-            request.setAttribute("usedDays", stats.usedDays);
-            request.setAttribute("totalDays", stats.totalDays);
-            
-            logger.info("Dashboard loaded for user {}: approved={}, pending={}, remaining={}, used={}", 
-                       user.getUsername(), approvedCount, pendingCount, 
-                       stats.remainingDays, stats.usedDays);
+            if (roleLevel == 1) {
+                // CEO: Hiển thị thống kê toàn hệ thống
+                int approvedCount = leaveRequestDAO.countAllLeaveRequestsByStatus("Approved");
+                int pendingCount = leaveRequestDAO.countAllLeaveRequestsByStatus("InProgress");
+                
+                // Thống kê audit logs
+                int auditLogCount = getAuditLogCount();
+                int todayAuditLogCount = getTodayAuditLogCount();
+                
+                request.setAttribute("approvedCount", approvedCount);
+                request.setAttribute("pendingCount", pendingCount);
+                request.setAttribute("remainingDays", auditLogCount);
+                request.setAttribute("usedDays", todayAuditLogCount);
+                
+                logger.info("CEO Dashboard loaded for user {}: approved={}, pending={}, auditLogs={}", 
+                           user.getUsername(), approvedCount, pendingCount, auditLogCount);
+            } else {
+                // Nhân viên thường: Hiển thị thống kê cá nhân
+                int approvedCount = leaveRequestDAO.countLeaveRequestsByStatus(
+                    user.getEmployeeID(), "Approved");
+                
+                int pendingCount = leaveRequestDAO.countLeaveRequestsByStatus(
+                    user.getEmployeeID(), "InProgress");
+                
+                DashboardStats stats = getLeaveQuotaStats(user.getEmployeeID());
+                
+                request.setAttribute("approvedCount", approvedCount);
+                request.setAttribute("pendingCount", pendingCount);
+                request.setAttribute("remainingDays", stats.remainingDays);
+                request.setAttribute("usedDays", stats.usedDays);
+                request.setAttribute("totalDays", stats.totalDays);
+                
+                logger.info("Dashboard loaded for user {}: approved={}, pending={}, remaining={}, used={}", 
+                           user.getUsername(), approvedCount, pendingCount, 
+                           stats.remainingDays, stats.usedDays);
+            }
             
         } catch (Exception e) {
             logger.error("Error loading dashboard statistics", e);
-            // Set default values nếu có lỗi
             request.setAttribute("approvedCount", 0);
             request.setAttribute("pendingCount", 0);
             request.setAttribute("remainingDays", 0);
@@ -74,13 +89,9 @@ public class HomeServlet extends HttpServlet {
         request.getRequestDispatcher("/home.jsp").forward(request, response);
     }
     
-    /**
-     * Lấy thông tin leave quota từ database
-     */
     private DashboardStats getLeaveQuotaStats(int employeeId) {
         DashboardStats stats = new DashboardStats();
         
-        // Query để lấy tổng remaining days và used days từ LeaveQuotas
         String sql = "SELECT " +
                     "    ISNULL(SUM(RemainingDays), 0) as TotalRemaining, " +
                     "    ISNULL(SUM(UsedDays), 0) as TotalUsed, " +
@@ -107,9 +118,43 @@ public class HomeServlet extends HttpServlet {
         return stats;
     }
     
-    /**
-     * Inner class để lưu dashboard statistics
-     */
+    private int getAuditLogCount() {
+        String sql = "SELECT COUNT(*) as TotalCount FROM AuditLogs";
+        
+        try (Connection conn = com.company.lms.util.DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("TotalCount");
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error getting audit log count", e);
+        }
+        
+        return 0;
+    }
+    
+    private int getTodayAuditLogCount() {
+        String sql = "SELECT COUNT(*) as TodayCount FROM AuditLogs " +
+                    "WHERE CAST(CreatedAt AS DATE) = CAST(GETDATE() AS DATE)";
+        
+        try (Connection conn = com.company.lms.util.DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("TodayCount");
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error getting today audit log count", e);
+        }
+        
+        return 0;
+    }
+    
     private static class DashboardStats {
         int remainingDays = 0;
         int usedDays = 0;

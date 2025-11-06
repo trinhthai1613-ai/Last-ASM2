@@ -78,6 +78,7 @@
             transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             font-size: 14px;
             font-weight: 500;
+            cursor: pointer;
         }
         .btn-back:hover { background: #e8e8ed; }
 
@@ -88,12 +89,21 @@
             margin-bottom: 24px;
             border: 1px solid rgba(0, 0, 0, 0.1);
         }
-        .filter-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        .filter-wrapper {
+            display: flex;
             gap: 16px;
+            align-items: flex-end;
         }
-        .form-group { display: flex; flex-direction: column; }
+        .filter-fields {
+            display: flex;
+            gap: 16px;
+            flex: 1;
+        }
+        .form-group { 
+            display: flex; 
+            flex-direction: column;
+            flex: 1;
+        }
         .form-group label {
             margin-bottom: 8px;
             color: #1d1d1f;
@@ -113,6 +123,22 @@
             outline: none;
             border-color: #000000;
             box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.06);
+        }
+        .btn-filter {
+            padding: 10px 24px;
+            background: #000000;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            white-space: nowrap;
+        }
+        .btn-filter:hover {
+            background: #1d1d1f;
+            transform: translateY(-1px);
         }
 
         .table-card {
@@ -195,30 +221,36 @@
 
         <div class="filter-section">
             <form method="get" action="${pageContext.request.contextPath}/request/list">
-                <div class="filter-grid">
-                    <div class="form-group">
-                        <label>🔍 Trạng thái</label>
-                        <select name="status" class="form-control" onchange="this.form.submit()">
-                            <option value="">Tất cả</option>
-                            <option value="InProgress" <%= "InProgress".equals(selectedStatus) ? "selected" : "" %>>Đang chờ</option>
-                            <option value="Approved" <%= "Approved".equals(selectedStatus) ? "selected" : "" %>>Đã duyệt</option>
-                            <option value="Rejected" <%= "Rejected".equals(selectedStatus) ? "selected" : "" %>>Từ chối</option>
-                        </select>
-                    </div>
+                <div class="filter-wrapper">
+                    <div class="filter-fields">
+                        <div class="form-group">
+                            <label>🔍 Trạng thái</label>
+                            <select name="status" class="form-control">
+                                <option value="">Tất cả</option>
+                                <option value="InProgress" <%= "InProgress".equals(selectedStatus) ? "selected" : "" %>>Đang chờ</option>
+                                <option value="Approved" <%= "Approved".equals(selectedStatus) ? "selected" : "" %>>Đã duyệt</option>
+                                <option value="Rejected" <%= "Rejected".equals(selectedStatus) ? "selected" : "" %>>Từ chối</option>
+                            </select>
+                        </div>
 
-                    <div class="form-group">
-                        <label>🏷️ Loại nghỉ phép</label>
-                        <select name="leaveTypeId" class="form-control" onchange="this.form.submit()">
-                            <option value="">Tất cả</option>
-                            <% if (leaveTypes != null) {
-                                for (LeaveType lt : leaveTypes) { %>
-                                <option value="<%= lt.getLeaveTypeID() %>"
-                                    <%= String.valueOf(lt.getLeaveTypeID()).equals(selectedLeaveTypeId) ? "selected" : "" %>>
-                                    <%= lt.getLeaveTypeName() %>
-                                </option>
-                            <% }} %>
-                        </select>
+                        <div class="form-group">
+                            <label>🏷️ Loại nghỉ phép</label>
+                            <select name="leaveTypeId" class="form-control">
+                                <option value="">Tất cả</option>
+                                <% if (leaveTypes != null) {
+                                    for (LeaveType lt : leaveTypes) { %>
+                                    <option value="<%= lt.getLeaveTypeID() %>"
+                                        <%= String.valueOf(lt.getLeaveTypeID()).equals(selectedLeaveTypeId) ? "selected" : "" %>>
+                                        <%= lt.getLeaveTypeName() %>
+                                    </option>
+                                <% }} %>
+                            </select>
+                        </div>
                     </div>
+                    
+                    <button type="submit" class="btn-filter">
+                        🔍 Lọc
+                    </button>
                 </div>
             </form>
         </div>
@@ -242,11 +274,10 @@
                             if ("Approved".equals(req.getStatus())) statusClass = "status-approved";
                             else if ("Rejected".equals(req.getStatus())) statusClass = "status-rejected";
                         %>
-                            <tr onclick="window.location.href='${pageContext.request.contextPath}/request/detail?id=<%= req.getRequestID() %>'">
+                            <tr data-request-id="<%= req.getRequestID() %>">
                                 <td>
                                     <a href="${pageContext.request.contextPath}/request/detail?id=<%= req.getRequestID() %>" 
-                                       class="request-code"
-                                       onclick="event.stopPropagation()">
+                                       class="request-code">
                                         <%= req.getRequestCode() %>
                                     </a>
                                 </td>
@@ -261,12 +292,36 @@
                 </table>
             <% } else { %>
                 <div class="empty-state">
-                    <div style="font-size: 64px; margin-bottom: 20px;">📭</div>
+                    <div style="font-size: 64px; margin-bottom: 20px;">🔭</div>
                     <h2>Chưa có đơn nghỉ phép nào</h2>
                     <p>Bạn chưa tạo đơn nghỉ phép nào. Hãy tạo đơn mới!</p>
                 </div>
             <% } %>
         </div>
     </div>
+
+    <script>
+        // Handle row clicks for navigation
+        document.querySelectorAll('tbody tr').forEach(function(row) {
+            row.addEventListener('click', function(e) {
+                // Don't navigate if clicking on the link directly
+                if (e.target.tagName === 'A' || e.target.closest('a')) {
+                    return;
+                }
+                
+                const requestId = this.getAttribute('data-request-id');
+                if (requestId) {
+                    window.location.href = '${pageContext.request.contextPath}/request/detail?id=' + requestId;
+                }
+            });
+        });
+
+        // Prevent any accidental double-clicks on links
+        document.querySelectorAll('.request-code').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+    </script>
 </body>
 </html>

@@ -11,8 +11,16 @@ import java.io.IOException;
 public class AuthFilter implements Filter {
     
     private static final String[] PUBLIC_URLS = {
-        "/login", "/register", "/assets/", "/css/", "/js/", "/images/"
-    };
+    "/login",
+    "/register",
+    "/google-login",
+    "/google-callback",
+    "/assets/",
+    "/css/",
+    "/js/",
+    "/images/"
+};
+
     
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)

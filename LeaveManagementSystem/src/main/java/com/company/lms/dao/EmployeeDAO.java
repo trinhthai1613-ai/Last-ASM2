@@ -18,6 +18,7 @@ public class EmployeeDAO {
     /**
      * Hash password sử dụng SHA-256
      */
+    
     private String hashPassword(String plainPassword) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -624,5 +625,87 @@ public boolean createEmployeeWithGoogleAuth(Employee employee) {
         }
     }
 }
+// Thêm method này vào EmployeeDAO.java (nếu chưa có)
+
+/**
+ * Map ResultSet to Employee object
+ */
+private Employee mapResultSetToEmployee(ResultSet rs) throws SQLException {
+    Employee employee = new Employee();
+    
+    employee.setEmployeeID(rs.getInt("EmployeeID"));
+    employee.setEmployeeCode(rs.getString("EmployeeCode"));
+    employee.setUsername(rs.getString("Username"));
+    employee.setEmail(rs.getString("Email"));
+    employee.setFullName(rs.getString("FullName"));
+    
+    String phone = rs.getString("PhoneNumber");
+    if (phone != null) {
+        employee.setPhoneNumber(phone);
+    }
+    
+    if (rs.getDate("DateOfBirth") != null) {
+        employee.setDateOfBirth(rs.getDate("DateOfBirth").toLocalDate());
+    }
+    
+    String gender = rs.getString("Gender");
+    if (gender != null) {
+        employee.setGender(gender);
+    }
+    
+    if (rs.getDate("HireDate") != null) {
+        employee.setHireDate(rs.getDate("HireDate").toLocalDate());
+    }
+    
+    employee.setDivisionID(rs.getInt("DivisionID"));
+    
+    // DivisionName - có thể không có trong một số query
+    try {
+        String divisionName = rs.getString("DivisionName");
+        if (divisionName != null) {
+            employee.setDivisionName(divisionName);
+        }
+    } catch (SQLException e) {
+        // Column might not exist
+    }
+    
+    int managerID = rs.getInt("ManagerID");
+    if (!rs.wasNull()) {
+        employee.setManagerID(managerID);
+    }
+    
+    // ManagerName - có thể không có
+    try {
+        String managerName = rs.getString("ManagerName");
+        if (managerName != null) {
+            employee.setManagerName(managerName);
+        }
+    } catch (SQLException e) {
+        // Column might not exist
+    }
+    
+    employee.setActive(rs.getBoolean("IsActive"));
+    
+    if (rs.getTimestamp("LastLogin") != null) {
+        employee.setLastLogin(rs.getTimestamp("LastLogin").toLocalDateTime());
+    }
+    
+    String avatarPath = rs.getString("AvatarPath");
+    if (avatarPath != null) {
+        employee.setAvatarPath(avatarPath);
+    }
+    
+    if (rs.getTimestamp("CreatedAt") != null) {
+        employee.setCreatedAt(rs.getTimestamp("CreatedAt").toLocalDateTime());
+    }
+    
+    if (rs.getTimestamp("UpdatedAt") != null) {
+        employee.setUpdatedAt(rs.getTimestamp("UpdatedAt").toLocalDateTime());
+    }
+    
+    return employee;
+}
+
+
     
 }
