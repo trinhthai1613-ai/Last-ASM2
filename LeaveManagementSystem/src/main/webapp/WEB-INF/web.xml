@@ -71,7 +71,14 @@
         <servlet-name>LogoutServlet</servlet-name>
         <url-pattern>/logout</url-pattern>
     </servlet-mapping>
-    
+    <servlet>
+    <servlet-name>TemplateApiServlet</servlet-name>
+    <servlet-class>com.company.lms.controller.TemplateApiServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>TemplateApiServlet</servlet-name>
+    <url-pattern>/api/templates</url-pattern>
+</servlet-mapping>
     <servlet>
         <servlet-name>CreateLeaveRequestServlet</servlet-name>
         <servlet-class>com.company.lms.controller.CreateLeaveRequestServlet</servlet-class>

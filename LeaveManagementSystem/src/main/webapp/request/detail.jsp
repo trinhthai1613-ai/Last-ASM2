@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.company.lms.model.*" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.time.Duration" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.company.lms.dao.*" %>
 <%
@@ -15,25 +16,22 @@
         return;
     }
     
-    // Kiểm tra quyền sửa
+    // Kiểm tra 1h limit
+    long minutesPassed = Duration.between(req.getCreatedAt(), java.time.LocalDateTime.now()).toMinutes();
+    boolean canEditTime = minutesPassed <= 60;
+    
+    // Kiểm tra quyền
     RoleDAO roleDAO = new RoleDAO();
     int roleLevel = roleDAO.getHighestRoleLevel(user.getEmployeeID());
-    boolean canEdit = false;
     
-    if (roleLevel <= 2) {
-        canEdit = true; // CEO/Manager
-    } else if (roleLevel == 3) {
-        EmployeeDAO empDAO = new EmployeeDAO();
-        Employee requestEmployee = empDAO.getEmployeeById(req.getEmployeeID());
-        canEdit = (requestEmployee != null && requestEmployee.getManagerID() != null && 
-                  requestEmployee.getManagerID() == user.getEmployeeID());
-    } else {
-        canEdit = (req.getEmployeeID() == user.getEmployeeID() && "InProgress".equals(req.getStatus()));
-    }
+    boolean isManager = (roleLevel <= 2);
+    boolean isOwner = (req.getEmployeeID() == user.getEmployeeID());
+    boolean canEditAsEmployee = (isOwner && "InProgress".equals(req.getStatus()) && canEditTime);
+    boolean canEditAsManager = (isManager && canEditTime);
     
-    // Lấy templates nếu có quyền sửa
+    // Lấy templates nếu là employee
     List<LeaveReasonTemplate> templates = null;
-    if (canEdit) {
+    if (canEditAsEmployee) {
         LeaveRequestDAO lrDAO = new LeaveRequestDAO();
         templates = lrDAO.getTemplatesByLeaveType(req.getLeaveTypeID());
     }
@@ -62,9 +60,9 @@
         .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 30px; }
         .logo { font-size: 20px; font-weight: 600; color: #000; text-decoration: none; }
         .main-container { max-width: 900px; margin: 40px auto; padding: 0 30px; }
-        .page-header { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        .page-header { display: flex; justify-content: space-between; margin-bottom: 30px; align-items: center; }
         h1 { font-size: 28px; font-weight: 600; }
-        .btn-back {
+        .btn-back, .btn-edit {
             padding: 8px 18px;
             background: #f5f5f7;
             border: 1px solid rgba(0,0,0,0.1);
@@ -72,7 +70,11 @@
             color: #1d1d1f;
             text-decoration: none;
             font-size: 14px;
+            cursor: pointer;
+            margin-left: 10px;
         }
+        .btn-edit { background: #007aff; color: #fff; border: none; }
+        .btn-edit:hover { background: #0051d5; }
         .detail-card, .edit-card {
             background: #ffffff;
             border-radius: 18px;
@@ -107,14 +109,12 @@
         .info-item { display: flex; flex-direction: column; gap: 6px; }
         .info-label { font-size: 12px; color: #6e6e73; }
         .info-value { font-size: 15px; font-weight: 500; color: #1d1d1f; }
-        .reason-box, .note-box {
+        .reason-box {
             background: #f5f5f7;
             border-radius: 12px;
             padding: 20px;
             line-height: 1.8;
         }
-        
-        /* Form Styles */
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
         .form-control, .form-select {
@@ -141,17 +141,23 @@
             cursor: pointer;
         }
         .btn-primary:hover { background: #1d1d1f; }
-        .btn-edit {
-            padding: 8px 18px;
-            background: #007aff;
-            color: #fff;
-            border: none;
-            border-radius: 980px;
-            font-size: 14px;
-            cursor: pointer;
-            margin-left: 10px;
+        #editFormEmployee, #editFormManager { display: none; }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
         }
-        #editForm { display: none; }
+        .alert-success { background: rgba(52,199,89,0.1); border: 1px solid rgba(52,199,89,0.3); color: #34c759; }
+        .alert-error { background: rgba(255,59,48,0.1); border: 1px solid rgba(255,59,48,0.3); color: #ff3b30; }
+        .time-warning {
+            background: rgba(255,149,0,0.1);
+            border: 1px solid rgba(255,149,0,0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #ff9500;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -166,35 +172,49 @@
             <h1>📄 Chi tiết đơn nghỉ phép</h1>
             <div>
                 <a href="javascript:history.back()" class="btn-back">← Quay lại</a>
-                <% if (canEdit) { %>
-                    <button onclick="toggleEdit()" class="btn-edit" id="btnEdit">✏️ Sửa đơn</button>
+                <% if (canEditAsEmployee) { %>
+                    <button onclick="toggleEmployeeEdit()" class="btn-edit" id="btnEditEmployee">✏️ Sửa đơn</button>
+                <% } else if (canEditAsManager && !isOwner) { %>
+                    <button onclick="toggleManagerEdit()" class="btn-edit" id="btnEditManager">🔄 Đổi trạng thái</button>
                 <% } %>
             </div>
         </div>
 
-        <!-- FORM SỬA ĐƠN -->
-        <% if (canEdit) { %>
-        <div class="edit-card" id="editForm">
+        <% if (session.getAttribute("success") != null) { %>
+            <div class="alert alert-success"><%= session.getAttribute("success") %></div>
+            <% session.removeAttribute("success"); %>
+        <% } %>
+        <% if (session.getAttribute("error") != null) { %>
+            <div class="alert alert-error"><%= session.getAttribute("error") %></div>
+            <% session.removeAttribute("error"); %>
+        <% } %>
+
+        <% if (!canEditTime) { %>
+            <div class="time-warning">⏰ Đã quá 1 giờ kể từ lúc tạo đơn. Không thể chỉnh sửa!</div>
+        <% } %>
+
+        <!-- FORM SỬA CHO NHÂN VIÊN -->
+        <% if (canEditAsEmployee) { %>
+        <div class="edit-card" id="editFormEmployee">
             <h2 style="margin-bottom: 24px;">✏️ Sửa đơn nghỉ phép</h2>
             <form method="post" action="${pageContext.request.contextPath}/request/update">
                 <input type="hidden" name="requestId" value="<%= req.getRequestID() %>">
+                <input type="hidden" name="actionType" value="employee">
                 
                 <div class="form-group">
                     <label>📅 Từ ngày</label>
-                    <input type="date" name="startDate" class="form-control" 
-                           value="<%= req.getStartDate() %>" <%= roleLevel >= 4 ? "" : "disabled" %>>
+                    <input type="date" name="startDate" class="form-control" value="<%= req.getStartDate() %>">
                 </div>
                 
                 <div class="form-group">
                     <label>📅 Đến ngày</label>
-                    <input type="date" name="endDate" class="form-control" 
-                           value="<%= req.getEndDate() %>" <%= roleLevel >= 4 ? "" : "disabled" %>>
+                    <input type="date" name="endDate" class="form-control" value="<%= req.getEndDate() %>">
                 </div>
                 
                 <% if (templates != null && !templates.isEmpty()) { %>
                 <div class="form-group">
                     <label>📝 Template lý do</label>
-                    <select name="reasonTemplateId" class="form-select" id="templateSelect">
+                    <select name="reasonTemplateId" class="form-select">
                         <option value="0">-- Tự nhập lý do --</option>
                         <% for (LeaveReasonTemplate tmpl : templates) { %>
                             <option value="<%= tmpl.getTemplateID() %>" 
@@ -207,21 +227,9 @@
                 <% } %>
                 
                 <div class="form-group">
-                    <label>💬 Lý do chi tiết (tùy chọn)</label>
+                    <label>💬 Lý do chi tiết</label>
                     <textarea name="customReason" class="form-control"><%= req.getCustomReason() != null ? req.getCustomReason() : "" %></textarea>
                 </div>
-                
-                <% if (roleLevel <= 2) { %>
-                <div class="form-group">
-                    <label>🔄 Trạng thái mới</label>
-                    <select name="newStatus" class="form-select">
-                        <option value="">-- Không thay đổi --</option>
-                        <option value="InProgress">Đang chờ</option>
-                        <option value="Approved">Đã duyệt</option>
-                        <option value="Rejected">Từ chối</option>
-                    </select>
-                </div>
-                <% } %>
                 
                 <div class="form-group">
                     <label>📌 Ghi chú cập nhật</label>
@@ -229,12 +237,41 @@
                 </div>
                 
                 <button type="submit" class="btn-primary">💾 Lưu thay đổi</button>
-                <button type="button" onclick="toggleEdit()" class="btn-back" style="margin-left: 10px;">❌ Hủy</button>
+                <button type="button" onclick="toggleEmployeeEdit()" class="btn-back" style="margin-left: 10px;">❌ Hủy</button>
             </form>
         </div>
         <% } %>
 
-        <!-- THÔNG TIN ĐƠN (code cũ giữ nguyên) -->
+        <!-- FORM SỬA CHO CẤP TRÊN -->
+        <% if (canEditAsManager && !isOwner) { %>
+        <div class="edit-card" id="editFormManager">
+            <h2 style="margin-bottom: 24px;">🔄 Đổi trạng thái đơn</h2>
+            <form method="post" action="${pageContext.request.contextPath}/request/update">
+                <input type="hidden" name="requestId" value="<%= req.getRequestID() %>">
+                <input type="hidden" name="actionType" value="manager">
+                
+                <div class="form-group">
+                    <label>📊 Trạng thái mới</label>
+                    <select name="newStatus" class="form-select" required>
+                        <option value="">-- Chọn trạng thái --</option>
+                        <option value="InProgress">Đang chờ</option>
+                        <option value="Approved">Đã duyệt</option>
+                        <option value="Rejected">Từ chối</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>📌 Ghi chú</label>
+                    <textarea name="updateNote" class="form-control" placeholder="Lý do thay đổi trạng thái..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn-primary">💾 Cập nhật</button>
+                <button type="button" onclick="toggleManagerEdit()" class="btn-back" style="margin-left: 10px;">❌ Hủy</button>
+            </form>
+        </div>
+        <% } %>
+
+        <!-- THÔNG TIN ĐƠN -->
         <div class="detail-card" id="detailView">
             <% 
                 String statusClass = "status-inprogress";
@@ -306,7 +343,7 @@
                 <% if (req.getProcessedNote() != null && !req.getProcessedNote().isEmpty()) { %>
                 <div style="margin-top: 20px;">
                     <span class="info-label">Ghi chú từ người duyệt:</span>
-                    <div class="note-box"><%= req.getProcessedNote() %></div>
+                    <div class="reason-box"><%= req.getProcessedNote() %></div>
                 </div>
                 <% } %>
             </div>
@@ -315,10 +352,10 @@
     </div>
 
     <script>
-        function toggleEdit() {
-            const form = document.getElementById('editForm');
+        function toggleEmployeeEdit() {
+            const form = document.getElementById('editFormEmployee');
             const detail = document.getElementById('detailView');
-            const btn = document.getElementById('btnEdit');
+            const btn = document.getElementById('btnEditEmployee');
             
             if (form.style.display === 'none' || form.style.display === '') {
                 form.style.display = 'block';
@@ -328,6 +365,22 @@
                 form.style.display = 'none';
                 detail.style.display = 'block';
                 btn.textContent = '✏️ Sửa đơn';
+            }
+        }
+        
+        function toggleManagerEdit() {
+            const form = document.getElementById('editFormManager');
+            const detail = document.getElementById('detailView');
+            const btn = document.getElementById('btnEditManager');
+            
+            if (form.style.display === 'none' || form.style.display === '') {
+                form.style.display = 'block';
+                detail.style.display = 'none';
+                btn.textContent = '👁️ Xem chi tiết';
+            } else {
+                form.style.display = 'none';
+                detail.style.display = 'block';
+                btn.textContent = '🔄 Đổi trạng thái';
             }
         }
     </script>
