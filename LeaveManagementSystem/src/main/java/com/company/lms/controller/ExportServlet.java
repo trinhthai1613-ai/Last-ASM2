@@ -59,71 +59,77 @@ public class ExportServlet extends HttpServlet {
     }
 
     private void exportCSV(HttpServletRequest request, HttpServletResponse response) {
-        String startDateParam = request.getParameter("startDate");
-        String endDateParam = request.getParameter("endDate");
-        String divisionIdParam = request.getParameter("divisionId");
+    String startDateParam = request.getParameter("startDate");
+    String endDateParam = request.getParameter("endDate");
+    String divisionIdParam = request.getParameter("divisionId");
 
-        LocalDate startDate = startDateParam != null ? LocalDate.parse(startDateParam) : LocalDate.now().withDayOfMonth(1);
-        LocalDate endDate = endDateParam != null ? LocalDate.parse(endDateParam) : LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
+    LocalDate startDate = startDateParam != null ? LocalDate.parse(startDateParam) : LocalDate.now().withDayOfMonth(1);
+    LocalDate endDate = endDateParam != null ? LocalDate.parse(endDateParam) : LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
 
-        Integer divisionId = null;
-        if (divisionIdParam != null && !divisionIdParam.isEmpty()) {
-            try {
-                divisionId = Integer.parseInt(divisionIdParam);
-            } catch (NumberFormatException e) {
-                logger.warn("Invalid division ID: {}", divisionIdParam);
-            }
-        }
-
-        // Lấy dữ liệu
-        List<LeaveRequest> requests;
-        List<Employee> employees;
-        
-        if (divisionId != null) {
-            requests = leaveRequestDAO.getApprovedLeavesByDivisionAndDateRange(divisionId, startDate, endDate);
-            employees = employeeDAO.getEmployeesByDivision(divisionId);
-        } else {
-            requests = leaveRequestDAO.getAllApprovedLeavesByDateRange(startDate, endDate);
-            employees = employeeDAO.getAllActiveEmployees();
-        }
-
-        // Export CSV
-        response.setContentType("text/csv; charset=UTF-8");
-        response.setCharacterEncoding("UTF-8");
-        response.setHeader("Content-Disposition",
-                "attachment; filename=\"leave_calendar_" + startDate + "_to_" + endDate + ".csv\"");
-
-        try (PrintWriter writer = response.getWriter()) {
-            writer.println("Nhân viên,Phòng ban,Ngày,Loại nghỉ,Lý do");
-
-            for (Employee emp : employees) {
-                LocalDate current = startDate;
-                while (!current.isAfter(endDate)) {
-                    boolean hasLeave = false;
-                    
-                    for (LeaveRequest lr : requests) {
-                        if (lr.getEmployeeID() == emp.getEmployeeID() &&
-                                !current.isBefore(lr.getStartDate()) &&
-                                !current.isAfter(lr.getEndDate())) {
-                            
-                            writer.printf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"%n",
-                                    emp.getFullName(),
-                                    emp.getDivisionName() != null ? emp.getDivisionName() : "",
-                                    current,
-                                    lr.getLeaveTypeName(),
-                                    lr.getReason().replace("\"", "\"\""));
-                            hasLeave = true;
-                            break;
-                        }
-                    }
-                    
-                    current = current.plusDays(1);
-                }
-            }
-            
-            logger.info("CSV exported for range {} to {}, employees: {}", startDate, endDate, employees.size());
-        } catch (IOException e) {
-            logger.error("Error exporting CSV", e);
+    Integer divisionId = null;
+    if (divisionIdParam != null && !divisionIdParam.isEmpty()) {
+        try {
+            divisionId = Integer.parseInt(divisionIdParam);
+        } catch (NumberFormatException e) {
+            logger.warn("Invalid division ID: {}", divisionIdParam);
         }
     }
+
+    List<LeaveRequest> requests;
+    List<Employee> employees;
+    
+    if (divisionId != null) {
+        requests = leaveRequestDAO.getApprovedLeavesByDivisionAndDateRange(divisionId, startDate, endDate);
+        employees = employeeDAO.getEmployeesByDivision(divisionId);
+    } else {
+        requests = leaveRequestDAO.getAllApprovedLeavesByDateRange(startDate, endDate);
+        employees = employeeDAO.getAllActiveEmployees();
+    }
+
+    // ✅ Fix: Thêm BOM và định dạng đúng cho Excel
+    response.setContentType("text/csv; charset=UTF-8");
+    response.setCharacterEncoding("UTF-8");
+    response.setHeader("Content-Disposition",
+            "attachment; filename=\"lich_nghi_phep_" + startDate + "_den_" + endDate + ".csv\"");
+
+    try (PrintWriter writer = response.getWriter()) {
+        // ✅ Thêm BOM để Excel nhận diện UTF-8
+        writer.write('\ufeff');
+        
+        // ✅ Header rõ ràng hơn
+        writer.println("Nhân viên,Phòng ban,Ngày,Loại nghỉ,Lý do");
+
+        for (Employee emp : employees) {
+            LocalDate current = startDate;
+            while (!current.isAfter(endDate)) {
+                for (LeaveRequest lr : requests) {
+                    if (lr.getEmployeeID() == emp.getEmployeeID() &&
+                            !current.isBefore(lr.getStartDate()) &&
+                            !current.isAfter(lr.getEndDate())) {
+                        
+                        // ✅ Format chuẩn CSV: escape quotes và newlines
+                        String reason = lr.getReason()
+                                .replace("\"", "\"\"")
+                                .replace("\n", " ")
+                                .replace("\r", "");
+                        
+                        writer.printf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"%n",
+                                emp.getFullName(),
+                                emp.getDivisionName() != null ? emp.getDivisionName() : "Chưa phân bổ",
+                                current,
+                                lr.getLeaveTypeName(),
+                                reason);
+                        break;
+                    }
+                }
+                current = current.plusDays(1);
+            }
+        }
+        
+        logger.info("CSV exported successfully: {} employees, {} to {}", 
+                employees.size(), startDate, endDate);
+    } catch (IOException e) {
+        logger.error("Error exporting CSV", e);
+    }
+}
 }
