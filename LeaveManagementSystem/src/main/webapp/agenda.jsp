@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.company.lms.model.*" %>
-<%@ page import="com.company.lms.dao.LeaveTypeDAO" %>
+<%@ page import="com.company.lms.dao.*" %>
 <%@ page import="java.util.*" %>
 <%@ page import="java.time.*" %>
 <%
@@ -23,6 +23,16 @@
 
     LeaveTypeDAO leaveTypeDAO = new LeaveTypeDAO();
     List<LeaveType> leaveTypes = leaveTypeDAO.getAllLeaveTypes();
+    
+    // ✅ LẤY DANH SÁCH NGÀY LỄ
+    HolidayDAO holidayDAO = new HolidayDAO();
+    List<Holiday> holidays = holidayDAO.getHolidaysByYear(YearMonth.parse(currentMonth).getYear());
+    Set<LocalDate> holidayDates = new HashSet<>();
+    Map<LocalDate, String> holidayNames = new HashMap<>();
+    for (Holiday h : holidays) {
+        holidayDates.add(h.getHolidayDate());
+        holidayNames.put(h.getHolidayDate(), h.getHolidayName());
+    }
 
     Map<Integer, Map<LocalDate, LeaveRequest>> leaveMap = new HashMap<>();
     if (leaveRequests != null) {
@@ -45,7 +55,6 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lịch nghỉ phép</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -64,11 +73,7 @@
             align-items: center;
             margin-bottom: 30px;
         }
-        .header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-        }
+        .header h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
         .btn {
             background: #000000;
             border: none;
@@ -77,25 +82,18 @@
             color: #fff;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: all 0.3s;
             text-decoration: none;
             display: inline-block;
             font-size: 14px;
-            letter-spacing: -0.01em;
         }
-        .btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
+        .btn:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
         .btn-secondary {
             background: #f5f5f7;
             border: 1px solid rgba(0, 0, 0, 0.1);
             color: #1d1d1f;
         }
-        .btn-secondary:hover {
-            background: #e8e8ed;
-            transform: scale(1.02);
-        }
+        .btn-secondary:hover { background: #e8e8ed; }
 
         .filter-section {
             background: #f5f5f7;
@@ -108,14 +106,9 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
-            margin-bottom: 16px;
         }
         .form-group { display: flex; flex-direction: column; }
-        .form-group label {
-            margin-bottom: 8px;
-            color: #6e6e73;
-            font-size: 13px;
-        }
+        .form-group label { margin-bottom: 8px; color: #6e6e73; font-size: 13px; }
         .form-control {
             background: #ffffff;
             border: 1px solid rgba(0, 0, 0, 0.1);
@@ -123,7 +116,6 @@
             padding: 10px 14px;
             color: #1d1d1f;
             font-size: 14px;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
         .form-control:focus {
             outline: none;
@@ -139,13 +131,8 @@
             padding: 20px;
             background: #f5f5f7;
             border-radius: 18px;
-            border: 1px solid rgba(0, 0, 0, 0.1);
         }
-        .month-title {
-            font-size: 22px;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-        }
+        .month-title { font-size: 22px; font-weight: 600; }
         .month-nav { display: flex; gap: 10px; }
 
         .calendar {
@@ -182,21 +169,55 @@
             border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
             position: relative;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: all 0.3s;
         }
         .day:hover {
             border-color: rgba(0, 0, 0, 0.2);
             transform: translateY(-2px);
         }
-        .day-number {
+        
+        /* ✅ NGÀY LỄ - HIỆU ỨNG ĐỘNG */
+        .day.holiday {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
+            border: 2px solid #ff3b30;
+            animation: pulse 2s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+        .day.holiday::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shine 3s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); }
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        .holiday-badge {
+            background: rgba(255,255,255,0.9);
+            color: #ff3b30;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
             font-weight: 600;
-            font-size: 14px;
-            color: #6e6e73;
-            margin-bottom: 8px;
+            margin-top: 5px;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .day.today .day-number {
-            color: #000000;
-        }
+        
+        .day-number { font-weight: 600; font-size: 14px; color: #6e6e73; margin-bottom: 8px; }
+        .day.today .day-number { color: #000000; }
+        .day.holiday .day-number { color: #fff; font-size: 16px; }
+        
         .leave-item {
             background: rgba(255, 59, 48, 0.1);
             border-left: 3px solid #ff3b30;
@@ -205,7 +226,7 @@
             border-radius: 6px;
             font-size: 11px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: all 0.3s;
         }
         .leave-item:hover {
             background: rgba(255, 59, 48, 0.2);
@@ -223,16 +244,8 @@
             gap: 20px;
             flex-wrap: wrap;
         }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .legend-box {
-            width: 20px;
-            height: 20px;
-            border-radius: 6px;
-        }
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .legend-box { width: 20px; height: 20px; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -240,12 +253,8 @@
     <div class="header">
         <h1>📅 Lịch nghỉ phép</h1>
         <div style="display: flex; gap: 10px;">
-            <a href="${pageContext.request.contextPath}/export" class="btn">
-                ⬇️ Xuất báo cáo
-            </a>
-            <a href="${pageContext.request.contextPath}/home" class="btn btn-secondary">
-                ← Quay lại
-            </a>
+            <a href="${pageContext.request.contextPath}/export" class="btn">⬇️ Xuất báo cáo</a>
+            <a href="${pageContext.request.contextPath}/home" class="btn btn-secondary">← Quay lại</a>
         </div>
     </div>
 
@@ -299,19 +308,11 @@
     </div>
 
     <div class="calendar-header">
-        <div class="month-title">
-            📆 Tháng <%= ym.getMonthValue() %>, <%= ym.getYear() %>
-        </div>
+        <div class="month-title">📆 Tháng <%= ym.getMonthValue() %>, <%= ym.getYear() %></div>
         <div class="month-nav">
-            <a href="?month=<%= ym.minusMonths(1).toString() %>&divisionId=<%= selectedDivisionId %>" class="btn btn-secondary">
-                ←
-            </a>
-            <a href="?month=<%= YearMonth.now().toString() %>&divisionId=<%= selectedDivisionId %>" class="btn btn-secondary">
-                Hôm nay
-            </a>
-            <a href="?month=<%= ym.plusMonths(1).toString() %>&divisionId=<%= selectedDivisionId %>" class="btn btn-secondary">
-                →
-            </a>
+            <a href="?month=<%= ym.minusMonths(1).toString() %>&divisionId=<%= selectedDivisionId %>" class="btn btn-secondary">←</a>
+            <a href="?month=<%= YearMonth.now().toString() %>&divisionId=<%= selectedDivisionId %>" class="btn btn-secondary">Hôm nay</a>
+            <a href="?month=<%= ym.plusMonths(1).toString() %>&divisionId=<%= selectedDivisionId %>" class="btn btn-secondary">→</a>
         </div>
     </div>
 
@@ -335,9 +336,16 @@
             for (int day = 1; day <= daysInMonth; day++) {
                 LocalDate currentDate = ym.atDay(day);
                 boolean isToday = currentDate.equals(LocalDate.now());
+                boolean isHoliday = holidayDates.contains(currentDate);
+                String holidayName = holidayNames.get(currentDate);
             %>
-                <div class="day <%= isToday ? "today" : "" %>">
+                <div class="day <%= isToday ? "today" : "" %> <%= isHoliday ? "holiday" : "" %>">
                     <div class="day-number"><%= day %></div>
+                    
+                    <% if (isHoliday) { %>
+                        <div class="holiday-badge">🎉 <%= holidayName %></div>
+                    <% } %>
+                    
                     <% 
                     if (employees != null) {
                         for (Employee emp : employees) {
@@ -359,6 +367,10 @@
         </div>
 
         <div class="legend">
+            <div class="legend-item">
+                <div class="legend-box" style="background: linear-gradient(135deg, #ff6b6b, #ff8787);"></div>
+                <span>🎉 Ngày lễ công ty</span>
+            </div>
             <div class="legend-item">
                 <div class="legend-box" style="background: rgba(255,59,48,0.2); border: 2px solid #ff3b30;"></div>
                 <span>Nghỉ phép</span>
