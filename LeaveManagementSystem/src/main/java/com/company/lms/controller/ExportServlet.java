@@ -86,18 +86,18 @@ public class ExportServlet extends HttpServlet {
         employees = employeeDAO.getAllActiveEmployees();
     }
 
-    // ✅ Fix: Thêm BOM và định dạng đúng cho Excel
     response.setContentType("text/csv; charset=UTF-8");
     response.setCharacterEncoding("UTF-8");
     response.setHeader("Content-Disposition",
             "attachment; filename=\"lich_nghi_phep_" + startDate + "_den_" + endDate + ".csv\"");
 
     try (PrintWriter writer = response.getWriter()) {
-        // ✅ Thêm BOM để Excel nhận diện UTF-8
         writer.write('\ufeff');
         
-        // ✅ Header rõ ràng hơn
-        writer.println("Nhân viên,Phòng ban,Ngày,Loại nghỉ,Lý do");
+        writer.println("Nhan vien,Phong ban,Ngay,Loai nghi,Ly do");
+
+        java.time.format.DateTimeFormatter dateFormatter = 
+            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         for (Employee emp : employees) {
             LocalDate current = startDate;
@@ -107,16 +107,16 @@ public class ExportServlet extends HttpServlet {
                             !current.isBefore(lr.getStartDate()) &&
                             !current.isAfter(lr.getEndDate())) {
                         
-                        // ✅ Format chuẩn CSV: escape quotes và newlines
                         String reason = lr.getReason()
                                 .replace("\"", "\"\"")
                                 .replace("\n", " ")
                                 .replace("\r", "");
                         
-                        writer.printf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"%n",
+                        // ✅ Thêm dấu = trước để Excel hiểu là text
+                        writer.printf("\"%s\",\"%s\",=\"%s\",\"%s\",\"%s\"%n",
                                 emp.getFullName(),
-                                emp.getDivisionName() != null ? emp.getDivisionName() : "Chưa phân bổ",
-                                current,
+                                emp.getDivisionName() != null ? emp.getDivisionName() : "",
+                                current.format(dateFormatter),
                                 lr.getLeaveTypeName(),
                                 reason);
                         break;
@@ -126,8 +126,7 @@ public class ExportServlet extends HttpServlet {
             }
         }
         
-        logger.info("CSV exported successfully: {} employees, {} to {}", 
-                employees.size(), startDate, endDate);
+        logger.info("CSV exported: {} employees", employees.size());
     } catch (IOException e) {
         logger.error("Error exporting CSV", e);
     }
