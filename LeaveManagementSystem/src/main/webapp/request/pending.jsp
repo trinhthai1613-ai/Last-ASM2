@@ -29,20 +29,21 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
-            background: #000000;
-            color: #ffffff;
+            background: #ffffff;
+            color: #1d1d1f;
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
         }
         
         .navbar {
-            background: #1c1c1e;
+            background: #ffffff;
             padding: 16px 0;
-            border-bottom: 1px solid #2c2c2e;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             position: sticky;
             top: 0;
             z-index: 100;
             backdrop-filter: blur(20px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
         
         .nav-container {
@@ -57,7 +58,7 @@
         .logo {
             font-size: 20px;
             font-weight: 600;
-            color: #ffffff;
+            color: #000000;
             text-decoration: none;
             letter-spacing: -0.02em;
         }
@@ -81,7 +82,7 @@
         
         .page-header p {
             font-size: 17px;
-            color: #8e8e93;
+            color: #6e6e73;
             font-weight: 400;
         }
         
@@ -90,10 +91,10 @@
             align-items: center;
             gap: 6px;
             padding: 10px 20px;
-            background: #1c1c1e;
-            border: 1px solid #2c2c2e;
+            background: #f5f5f7;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
-            color: #ffffff;
+            color: #1d1d1f;
             text-decoration: none;
             margin-bottom: 24px;
             transition: all 0.2s ease;
@@ -102,17 +103,17 @@
         }
         
         .btn-back:hover {
-            background: #2c2c2e;
+            background: #e8e8ed;
             transform: translateX(-4px);
         }
         
         /* Filter Section - HR Only */
         .filter-section {
-            background: #1c1c1e;
+            background: #f5f5f7;
             border-radius: 16px;
             padding: 24px;
             margin-bottom: 30px;
-            border: 1px solid #2c2c2e;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
         
         .filter-header {
@@ -138,28 +139,30 @@
             align-items: center;
             gap: 10px;
             padding: 12px 16px;
-            background: #000000;
-            border: 1px solid #2c2c2e;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
         
         .filter-checkbox:hover {
-            border-color: #48484a;
+            border-color: #000000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
         
         .filter-checkbox input[type="checkbox"] {
             width: 20px;
             height: 20px;
             cursor: pointer;
-            accent-color: #ffffff;
+            accent-color: #000000;
         }
         
         .filter-checkbox label {
             cursor: pointer;
             font-size: 15px;
             flex: 1;
+            color: #1d1d1f;
         }
         
         .filter-actions {
@@ -179,39 +182,40 @@
         }
         
         .btn-apply {
-            background: #ffffff;
-            color: #000000;
+            background: #000000;
+            color: #ffffff;
         }
         
         .btn-apply:hover {
             transform: scale(1.02);
+            background: #1d1d1f;
         }
         
         .btn-reset {
             background: transparent;
-            color: #8e8e93;
-            border: 1px solid #2c2c2e;
+            color: #6e6e73;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
         
         .btn-reset:hover {
-            border-color: #48484a;
-            color: #ffffff;
+            border-color: #000000;
+            color: #1d1d1f;
         }
         
         /* Division Badge - For Division Leaders */
         .division-badge {
             display: inline-block;
-            background: #1c1c1e;
-            border: 1px solid #2c2c2e;
+            background: #f5f5f7;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 14px;
             margin-bottom: 20px;
-            color: #8e8e93;
+            color: #6e6e73;
         }
         
         .division-badge strong {
-            color: #ffffff;
+            color: #1d1d1f;
         }
         
         /* Alert Messages */
@@ -241,17 +245,18 @@
         }
         
         .request-card {
-            background: #1c1c1e;
+            background: #ffffff;
             border-radius: 16px;
             padding: 24px;
-            border: 1px solid #2c2c2e;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
         
         .request-card:hover {
             transform: translateY(-4px);
-            border-color: #48484a;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+            border-color: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
         }
         
         .request-header {
@@ -260,7 +265,7 @@
             align-items: start;
             margin-bottom: 20px;
             padding-bottom: 16px;
-            border-bottom: 1px solid #2c2c2e;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
         
         .employee-info {
@@ -273,13 +278,13 @@
             width: 52px;
             height: 52px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #ffffff 0%, #8e8e93 100%);
+            background: linear-gradient(135deg, #000000 0%, #3a3a3c 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
             font-size: 20px;
-            color: #000000;
+            color: #ffffff;
         }
         
         .employee-details h3 {
@@ -290,7 +295,7 @@
         
         .employee-details p {
             font-size: 14px;
-            color: #8e8e93;
+            color: #6e6e73;
         }
         
         .request-badges {
@@ -315,8 +320,8 @@
             border-radius: 6px;
             font-size: 11px;
             font-weight: 500;
-            background: #2c2c2e;
-            color: #8e8e93;
+            background: #f5f5f7;
+            color: #6e6e73;
         }
         
         .request-body {
@@ -334,7 +339,7 @@
         
         .info-label {
             font-size: 12px;
-            color: #8e8e93;
+            color: #6e6e73;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 600;
@@ -343,20 +348,20 @@
         .info-value {
             font-size: 15px;
             font-weight: 500;
-            color: #ffffff;
+            color: #1d1d1f;
         }
         
         .reason-box {
-            background: #000000;
+            background: #f5f5f7;
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 20px;
-            border: 1px solid #2c2c2e;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
         
         .reason-box h4 {
             font-size: 12px;
-            color: #8e8e93;
+            color: #6e6e73;
             margin-bottom: 10px;
             font-weight: 600;
             text-transform: uppercase;
@@ -366,7 +371,7 @@
         .reason-box p {
             font-size: 15px;
             line-height: 1.5;
-            color: #ffffff;
+            color: #1d1d1f;
         }
         
         .action-buttons {
@@ -390,49 +395,51 @@
         }
         
         .btn-approve {
-            background: #ffffff;
-            color: #000000;
+            background: #000000;
+            color: #ffffff;
         }
         
         .btn-approve:hover {
             transform: scale(1.02);
-            box-shadow: 0 4px 16px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            background: #1d1d1f;
         }
         
         .btn-reject {
             background: transparent;
-            border: 1px solid #2c2c2e;
-            color: #8e8e93;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: #6e6e73;
         }
         
         .btn-reject:hover {
-            border-color: #48484a;
-            color: #ffffff;
+            border-color: #000000;
+            color: #1d1d1f;
         }
         
         /* Empty State */
         .empty-state {
-            background: #1c1c1e;
+            background: #ffffff;
             border-radius: 16px;
             padding: 80px 40px;
             text-align: center;
-            border: 1px solid #2c2c2e;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
         
         .empty-state-icon {
             font-size: 72px;
             margin-bottom: 24px;
-            opacity: 0.5;
+            opacity: 0.3;
         }
         
         .empty-state h3 {
             font-size: 24px;
             margin-bottom: 12px;
             font-weight: 600;
+            color: #1d1d1f;
         }
         
         .empty-state p {
-            color: #8e8e93;
+            color: #6e6e73;
             font-size: 16px;
         }
         
@@ -445,19 +452,19 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(20px);
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
         }
         
         .modal-content {
-            background: #1c1c1e;
+            background: #ffffff;
             margin: 10% auto;
             padding: 32px;
-            border: 1px solid #2c2c2e;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 20px;
             width: 90%;
             max-width: 500px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
         
         .modal-header {
@@ -470,19 +477,20 @@
         .modal-header h2 {
             font-size: 24px;
             font-weight: 700;
+            color: #1d1d1f;
         }
         
         .close {
             font-size: 32px;
             font-weight: 300;
-            color: #8e8e93;
+            color: #6e6e73;
             cursor: pointer;
             transition: all 0.2s ease;
             line-height: 1;
         }
         
         .close:hover {
-            color: #ffffff;
+            color: #1d1d1f;
         }
         
         .form-group {
@@ -492,7 +500,7 @@
         .form-group label {
             display: block;
             margin-bottom: 10px;
-            color: #ffffff;
+            color: #1d1d1f;
             font-size: 15px;
             font-weight: 600;
         }
@@ -500,10 +508,10 @@
         .form-group textarea {
             width: 100%;
             padding: 14px 16px;
-            background: #000000;
-            border: 1px solid #2c2c2e;
+            background: #f5f5f7;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
-            color: #ffffff;
+            color: #1d1d1f;
             font-size: 15px;
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
             min-height: 120px;
@@ -512,11 +520,13 @@
         
         .form-group textarea:focus {
             outline: none;
-            border-color: #48484a;
+            border-color: #000000;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.06);
         }
         
         .form-group textarea::placeholder {
-            color: #48484a;
+            color: #6e6e73;
         }
         
         /* Stats - For HR */
@@ -528,22 +538,24 @@
         
         .stat-card {
             flex: 1;
-            background: #1c1c1e;
-            border: 1px solid #2c2c2e;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
             padding: 20px;
             text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
         
         .stat-number {
             font-size: 32px;
             font-weight: 700;
             margin-bottom: 4px;
+            color: #1d1d1f;
         }
         
         .stat-label {
             font-size: 13px;
-            color: #8e8e93;
+            color: #6e6e73;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 600;
