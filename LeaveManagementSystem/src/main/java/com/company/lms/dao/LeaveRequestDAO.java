@@ -264,29 +264,7 @@ public int countAllLeaveRequestsByStatus(String status) {
      * Lấy tất cả đơn nghỉ phép đang chờ xét duyệt (status = 'InProgress')
      * Dành cho Manager/CEO để duyệt đơn
      */
-    public List<LeaveRequest> getPendingLeaveRequests() {
-        List<LeaveRequest> requests = new ArrayList<>();
-        String sql = "SELECT lr.*, e.FullName as EmployeeName, lt.LeaveTypeName " +
-                    "FROM LeaveRequests lr " +
-                    "LEFT JOIN Employees e ON lr.EmployeeID = e.EmployeeID " +
-                    "LEFT JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID " +
-                    "WHERE lr.Status = 'InProgress' " +
-                    "ORDER BY lr.CreatedAt DESC";
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
-            while (rs.next()) {
-                requests.add(extractLeaveRequestFromResultSet(rs));
-            }
-            
-        } catch (SQLException e) {
-            logger.error("Error getting pending leave requests", e);
-        }
-        
-        return requests;
-    }
+    
     
     public LeaveRequest getLeaveRequestById(int requestID) {
         String sql = "SELECT lr.*, e.FullName as EmployeeName, lt.LeaveTypeName, " +
@@ -610,5 +588,126 @@ public List<LeaveReasonTemplate> getTemplatesByLeaveType(int leaveTypeId) {
     }
     
     return templates;
+}
+public List<LeaveRequest> getPendingLeaveRequests() {
+    List<LeaveRequest> requests = new ArrayList<>();
+    String sql = "SELECT lr.*, e.FullName as EmployeeName, e.DivisionID, " +
+                "lt.LeaveTypeName, d.DivisionName " +
+                "FROM LeaveRequests lr " +
+                "LEFT JOIN Employees e ON lr.EmployeeID = e.EmployeeID " +
+                "LEFT JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID " +
+                "LEFT JOIN Divisions d ON e.DivisionID = d.DivisionID " +
+                "WHERE lr.Status = 'InProgress' " +
+                "ORDER BY d.DivisionName, lr.CreatedAt DESC";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         Statement stmt = conn.createStatement();
+         ResultSet rs = stmt.executeQuery(sql)) {
+        
+        while (rs.next()) {
+            LeaveRequest request = extractLeaveRequestFromResultSet(rs);
+            // Set thêm DivisionName nếu có
+            try {
+                request.setDivisionName(rs.getString("DivisionName"));
+            } catch (SQLException e) {
+                // Column might not exist
+            }
+            requests.add(request);
+        }
+        
+    } catch (SQLException e) {
+        logger.error("Error getting pending leave requests", e);
+    }
+    
+    return requests;
+}
+
+/**
+ * Lấy đơn nghỉ phép đang chờ xét duyệt theo phòng ban (cho Division Leader)
+ */
+public List<LeaveRequest> getPendingLeaveRequestsByDivision(int divisionID) {
+    List<LeaveRequest> requests = new ArrayList<>();
+    String sql = "SELECT lr.*, e.FullName as EmployeeName, e.DivisionID, " +
+                "lt.LeaveTypeName, d.DivisionName " +
+                "FROM LeaveRequests lr " +
+                "INNER JOIN Employees e ON lr.EmployeeID = e.EmployeeID " +
+                "LEFT JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID " +
+                "LEFT JOIN Divisions d ON e.DivisionID = d.DivisionID " +
+                "WHERE lr.Status = 'InProgress' AND e.DivisionID = ? " +
+                "ORDER BY lr.CreatedAt DESC";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        stmt.setInt(1, divisionID);
+        ResultSet rs = stmt.executeQuery();
+        
+        while (rs.next()) {
+            LeaveRequest request = extractLeaveRequestFromResultSet(rs);
+            try {
+                request.setDivisionName(rs.getString("DivisionName"));
+            } catch (SQLException e) {
+                // Column might not exist
+            }
+            requests.add(request);
+        }
+        
+        logger.info("Found {} pending requests for division {}", requests.size(), divisionID);
+        
+    } catch (SQLException e) {
+        logger.error("Error getting pending leave requests by division", e);
+    }
+    
+    return requests;
+}
+
+/**
+ * Lấy đơn nghỉ phép đang chờ theo nhiều phòng ban (cho HR khi filter)
+ */
+public List<LeaveRequest> getPendingLeaveRequestsByDivisions(List<Integer> divisionIDs) {
+    if (divisionIDs == null || divisionIDs.isEmpty()) {
+        return getPendingLeaveRequests(); // Trả về tất cả
+    }
+    
+    List<LeaveRequest> requests = new ArrayList<>();
+    StringBuilder sql = new StringBuilder(
+        "SELECT lr.*, e.FullName as EmployeeName, e.DivisionID, " +
+        "lt.LeaveTypeName, d.DivisionName " +
+        "FROM LeaveRequests lr " +
+        "INNER JOIN Employees e ON lr.EmployeeID = e.EmployeeID " +
+        "LEFT JOIN LeaveTypes lt ON lr.LeaveTypeID = lt.LeaveTypeID " +
+        "LEFT JOIN Divisions d ON e.DivisionID = d.DivisionID " +
+        "WHERE lr.Status = 'InProgress' AND e.DivisionID IN (");
+    
+    for (int i = 0; i < divisionIDs.size(); i++) {
+        sql.append("?");
+        if (i < divisionIDs.size() - 1) sql.append(",");
+    }
+    sql.append(") ORDER BY d.DivisionName, lr.CreatedAt DESC");
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+        
+        for (int i = 0; i < divisionIDs.size(); i++) {
+            stmt.setInt(i + 1, divisionIDs.get(i));
+        }
+        
+        ResultSet rs = stmt.executeQuery();
+        
+        while (rs.next()) {
+            LeaveRequest request = extractLeaveRequestFromResultSet(rs);
+            try {
+                request.setDivisionName(rs.getString("DivisionName"));
+            } catch (SQLException e) {
+                // Column might not exist
+            }
+            requests.add(request);
+        }
+        
+    } catch (SQLException e) {
+        logger.error("Error getting pending leave requests by divisions", e);
+    }
+    
+    return requests;
 }
 }

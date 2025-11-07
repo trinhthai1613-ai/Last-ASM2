@@ -2,6 +2,7 @@ package com.company.lms.controller;
 
 import com.company.lms.dao.LeaveRequestDAO;
 import com.company.lms.model.Employee;
+import com.company.lms.model.LeaveRequest;
 import com.company.lms.service.EmployeeService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -36,16 +37,19 @@ public class ProcessLeaveRequestServlet extends HttpServlet {
         }
         
         Employee user = (Employee) session.getAttribute("user");
+        int employeeID = user.getEmployeeID();
         
-        // KIỂM TRA QUYỀN: Chỉ Manager mới được duyệt/từ chối đơn
-        int roleLevel = employeeService.getLowestRoleLevel(user.getEmployeeID());
-    if (roleLevel > 2) {
-        logger.warn("Unauthorized process attempt by employee: {} with level: {}", 
-                    user.getEmployeeID(), roleLevel);
-        session.setAttribute("error", "Bạn không có quyền duyệt đơn! Chỉ quản lý cấp cao (Level 1-2) mới có thể duyệt đơn nghỉ phép.");
-        response.sendRedirect(request.getContextPath() + "/home");
-        return;
-    }
+        // Kiểm tra quyền
+        boolean isHRManager = employeeService.isHRManager(employeeID);
+        boolean isDivLeader = employeeService.isDivisionLeader(employeeID);
+        boolean isCEO = employeeService.isCEOorAdmin(employeeID);
+        
+        if (!isHRManager && !isDivLeader && !isCEO) {
+            logger.warn("Unauthorized process attempt by employee: {}", employeeID);
+            session.setAttribute("error", "Bạn không có quyền duyệt đơn!");
+            response.sendRedirect(request.getContextPath() + "/home");
+            return;
+        }
         
         try {
             int requestID = Integer.parseInt(request.getParameter("requestID"));
@@ -59,10 +63,36 @@ public class ProcessLeaveRequestServlet extends HttpServlet {
                 return;
             }
             
+            // Lấy thông tin đơn để kiểm tra phòng ban
+            LeaveRequest leaveRequest = leaveRequestDAO.getLeaveRequestById(requestID);
+            
+            if (leaveRequest == null) {
+                session.setAttribute("error", "Không tìm thấy đơn nghỉ phép!");
+                response.sendRedirect(request.getContextPath() + "/request/pending");
+                return;
+            }
+            
+            // Division Leader chỉ được duyệt đơn của phòng mình
+            if (isDivLeader && !isHRManager && !isCEO) {
+                // Lấy divisionID của nhân viên gửi đơn
+                int requestDivisionID = leaveRequest.getEmployeeID(); // Cần lấy từ employee
+                Employee requestEmployee = new com.company.lms.dao.EmployeeDAO()
+                    .getEmployeeById(leaveRequest.getEmployeeID());
+                
+                if (requestEmployee == null || requestEmployee.getDivisionID() != user.getDivisionID()) {
+                    logger.warn("Division Leader {} tried to process request from different division", 
+                               employeeID);
+                    session.setAttribute("error", 
+                        "Bạn chỉ có thể duyệt đơn của nhân viên trong phòng ban của mình!");
+                    response.sendRedirect(request.getContextPath() + "/request/pending");
+                    return;
+                }
+            }
+            
             // Process leave request
             boolean success = leaveRequestDAO.processLeaveRequest(
                 requestID, 
-                user.getEmployeeID(), 
+                employeeID, 
                 action, 
                 note
             );
@@ -73,7 +103,7 @@ public class ProcessLeaveRequestServlet extends HttpServlet {
                     "Đã từ chối đơn nghỉ phép!";
                 session.setAttribute("success", message);
                 logger.info("Leave request {} processed by user {}: {}", 
-                           requestID, user.getEmployeeID(), action);
+                           requestID, employeeID, action);
             } else {
                 session.setAttribute("error", "Xử lý đơn thất bại. Vui lòng thử lại!");
                 logger.error("Failed to process leave request {}", requestID);

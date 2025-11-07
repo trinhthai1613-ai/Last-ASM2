@@ -103,4 +103,24 @@ public class EmployeeService {
                 .min()
                 .orElse(999); // Nếu không có role, trả về level rất cao (không có quyền)
     }
+    public boolean isHRManager(int employeeID) {
+    List<Role> roles = roleDAO.getRolesByEmployeeId(employeeID);
+    return roles.stream().anyMatch(r -> "HR_MANAGER".equals(r.getRoleCode()));
+}
+
+/**
+ * Kiểm tra có phải Division Leader không (RoleCode = 'DIV_LEADER')
+ */
+public boolean isDivisionLeader(int employeeID) {
+    List<Role> roles = roleDAO.getRolesByEmployeeId(employeeID);
+    return roles.stream().anyMatch(r -> "DIV_LEADER".equals(r.getRoleCode()));
+}
+
+/**
+ * Kiểm tra có phải CEO/Admin không (Level 1)
+ */
+public boolean isCEOorAdmin(int employeeID) {
+    List<Role> roles = roleDAO.getRolesByEmployeeId(employeeID);
+    return roles.stream().anyMatch(r -> r.getLevel() == 1);
+}
 }
