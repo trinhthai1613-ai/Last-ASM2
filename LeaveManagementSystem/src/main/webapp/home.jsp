@@ -213,29 +213,34 @@ boolean isSeniorManagement = (roleLevel == 1 || roleLevel == 2);
         <div class="dashboard-grid">
             <% if (isCEO) { %>
             <div class="dashboard-card">
-                <div class="card-icon">✓</div>
-                <div class="card-title">Đơn đã duyệt</div>
-                <div class="card-value"><%= request.getAttribute("approvedCount") != null ? request.getAttribute("approvedCount") : 0 %></div>
-                <div class="card-description">Tổng số đơn đã được duyệt trong hệ thống</div>
-            </div>
-            <div class="dashboard-card">
-                <div class="card-icon">⏱</div>
-                <div class="card-title">Đang chờ</div>
-                <div class="card-value"><%= request.getAttribute("pendingCount") != null ? request.getAttribute("pendingCount") : 0 %></div>
-                <div class="card-description">Đơn đang chờ xét duyệt trong hệ thống</div>
-            </div>
-            <div class="dashboard-card">
-                <div class="card-icon">📊</div>
-                <div class="card-title">Audit Logs</div>
-                <div class="card-value"><%= request.getAttribute("remainingDays") != null ? request.getAttribute("remainingDays") : 0 %></div>
-                <div class="card-description">Tổng số bản ghi hệ thống</div>
-            </div>
-            <div class="dashboard-card">
-                <div class="card-icon">📝</div>
-                <div class="card-title">Hôm nay</div>
-                <div class="card-value"><%= request.getAttribute("usedDays") != null ? request.getAttribute("usedDays") : 0 %></div>
-                <div class="card-description">Số bản ghi audit hôm nay</div>
-            </div>
+        <div class="card-icon">✓</div>
+        <div class="card-title">Đơn đã duyệt</div>
+        <div class="card-value"><%= request.getAttribute("approvedCount") != null ? request.getAttribute("approvedCount") : 0 %></div>
+        <div class="card-description">Tổng số đơn đã được duyệt trong hệ thống</div>
+    </div>
+    
+    <!-- ✅ THÊM DASHBOARD BUTTON -->
+    <a href="${pageContext.request.contextPath}/dashboard" style="text-decoration: none;">
+        <div class="dashboard-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff;">
+            <div class="card-icon" style="background: rgba(255,255,255,0.2);">📊</div>
+            <div class="card-title">Dashboard</div>
+            <div class="card-value">Xem ngay</div>
+            <div class="card-description" style="color: rgba(255,255,255,0.8);">Thống kê chi tiết toàn hệ thống</div>
+        </div>
+    </a>
+    
+    <div class="dashboard-card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Audit Logs</div>
+        <div class="card-value"><%= request.getAttribute("remainingDays") != null ? request.getAttribute("remainingDays") : 0 %></div>
+        <div class="card-description">Tổng số bản ghi hệ thống</div>
+    </div>
+    <div class="dashboard-card">
+        <div class="card-icon">📄</div>
+        <div class="card-title">Hôm nay</div>
+        <div class="card-value"><%= request.getAttribute("usedDays") != null ? request.getAttribute("usedDays") : 0 %></div>
+        <div class="card-description">Số bản ghi audit hôm nay</div>
+    </div>
             <% } else { %>
             <div class="dashboard-card">
                 <div class="card-icon">✓</div>
@@ -270,6 +275,7 @@ boolean isSeniorManagement = (roleLevel == 1 || roleLevel == 2);
                 Duyệt đơn nghỉ phép
             </a>
             <% } %>
+            
             
             <% if (isCEO) { %>
             <a href="${pageContext.request.contextPath}/audit/logs" class="action-btn action-btn-warning">

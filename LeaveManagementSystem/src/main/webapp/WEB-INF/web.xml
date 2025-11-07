@@ -79,7 +79,17 @@
     <servlet-name>TemplateApiServlet</servlet-name>
     <url-pattern>/api/templates</url-pattern>
 </servlet-mapping>
-    <servlet>
+<!-- Dashboard Servlet -->
+<servlet>
+    <servlet-name>DashboardServlet</servlet-name>
+    <servlet-class>com.company.lms.controller.DashboardServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>DashboardServlet</servlet-name>
+    <url-pattern>/dashboard</url-pattern>
+</servlet-mapping>
+        
+<servlet>
         <servlet-name>CreateLeaveRequestServlet</servlet-name>
         <servlet-class>com.company.lms.controller.CreateLeaveRequestServlet</servlet-class>
     </servlet>
