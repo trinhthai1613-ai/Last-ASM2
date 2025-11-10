@@ -2,8 +2,10 @@ package com.company.lms.controller;
 
 import com.company.lms.dao.AuditLogDAO;
 import com.company.lms.dao.EmployeeDAO;
+import com.company.lms.dao.DivisionDAO;
 import com.company.lms.model.AuditLog;
 import com.company.lms.model.Employee;
+import com.company.lms.model.Division;
 import com.company.lms.service.EmployeeService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
@@ -18,12 +20,14 @@ public class AuditLogsServlet extends HttpServlet {
     private static final Logger logger = LoggerFactory.getLogger(AuditLogsServlet.class);
     private AuditLogDAO auditLogDAO;
     private EmployeeDAO employeeDAO;
+    private DivisionDAO divisionDAO;
     private EmployeeService employeeService;
     
     @Override
     public void init() throws ServletException {
         auditLogDAO = new AuditLogDAO();
         employeeDAO = new EmployeeDAO();
+        divisionDAO = new DivisionDAO();
         employeeService = new EmployeeService();
     }
     
@@ -47,10 +51,20 @@ public class AuditLogsServlet extends HttpServlet {
         
         try {
             // Lấy tham số filter
-            String tableName = request.getParameter("tableName");
+            String divisionIdParam = request.getParameter("divisionId");
             String employeeIdParam = request.getParameter("employeeId");
+            String actionParam = request.getParameter("action");
             String fromDateParam = request.getParameter("fromDate");
             String toDateParam = request.getParameter("toDate");
+            
+            Integer divisionId = null;
+            if (divisionIdParam != null && !divisionIdParam.isEmpty()) {
+                try {
+                    divisionId = Integer.parseInt(divisionIdParam);
+                } catch (NumberFormatException e) {
+                    logger.warn("Invalid division ID: {}", divisionIdParam);
+                }
+            }
             
             Integer employeeId = null;
             if (employeeIdParam != null && !employeeIdParam.isEmpty()) {
@@ -80,16 +94,21 @@ public class AuditLogsServlet extends HttpServlet {
             }
             
             // Lấy danh sách audit logs
-            List<AuditLog> logs = auditLogDAO.getAllAuditLogs(tableName, employeeId, fromDate, toDate);
+            List<AuditLog> logs = auditLogDAO.getAuditLogsWithDivision(
+                divisionId, employeeId, fromDate, toDate, actionParam
+            );
             
-            // Lấy danh sách employees cho filter
+            // Lấy danh sách divisions và employees cho filter
+            List<Division> divisions = divisionDAO.getAllDivisions();
             List<Employee> employees = employeeDAO.getAllEmployees();
             
             // Set attributes
             request.setAttribute("logs", logs);
+            request.setAttribute("divisions", divisions);
             request.setAttribute("employees", employees);
-            request.setAttribute("selectedTableName", tableName);
+            request.setAttribute("selectedDivisionId", divisionIdParam);
             request.setAttribute("selectedEmployeeId", employeeIdParam);
+            request.setAttribute("selectedAction", actionParam);
             request.setAttribute("selectedFromDate", fromDateParam);
             request.setAttribute("selectedToDate", toDateParam);
             

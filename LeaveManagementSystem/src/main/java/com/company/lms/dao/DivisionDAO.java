@@ -11,14 +11,18 @@ import java.util.List;
 
 public class DivisionDAO {
     private static final Logger logger = LoggerFactory.getLogger(DivisionDAO.class);
-    
+
+    /**
+     * Lấy tất cả các phòng ban đang hoạt động
+     */
     public List<Division> getAllDivisions() {
         List<Division> divisions = new ArrayList<>();
-        String sql = "SELECT * FROM Divisions WHERE IsActive = 1 ORDER BY DivisionName";
+        String sql = "SELECT DivisionID, DivisionCode, DivisionName, Description, IsActive " +
+                     "FROM Divisions WHERE IsActive = 1 ORDER BY DivisionName";
         
         try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
             
             while (rs.next()) {
                 Division division = new Division();
@@ -26,9 +30,11 @@ public class DivisionDAO {
                 division.setDivisionCode(rs.getString("DivisionCode"));
                 division.setDivisionName(rs.getString("DivisionName"));
                 division.setDescription(rs.getString("Description"));
-                division.setActive(rs.getBoolean("IsActive"));
+                division.setIsActive(rs.getBoolean("IsActive"));
                 divisions.add(division);
             }
+            
+            logger.info("Retrieved {} divisions", divisions.size());
             
         } catch (SQLException e) {
             logger.error("Error getting all divisions", e);
@@ -37,13 +43,17 @@ public class DivisionDAO {
         return divisions;
     }
     
-    public Division getDivisionById(int divisionID) {
-        String sql = "SELECT * FROM Divisions WHERE DivisionID = ?";
+    /**
+     * Lấy division theo ID
+     */
+    public Division getDivisionById(int divisionId) {
+        String sql = "SELECT DivisionID, DivisionCode, DivisionName, Description, IsActive " +
+                     "FROM Divisions WHERE DivisionID = ?";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-            stmt.setInt(1, divisionID);
+            stmt.setInt(1, divisionId);
             ResultSet rs = stmt.executeQuery();
             
             if (rs.next()) {
@@ -52,12 +62,12 @@ public class DivisionDAO {
                 division.setDivisionCode(rs.getString("DivisionCode"));
                 division.setDivisionName(rs.getString("DivisionName"));
                 division.setDescription(rs.getString("Description"));
-                division.setActive(rs.getBoolean("IsActive"));
+                division.setIsActive(rs.getBoolean("IsActive"));
                 return division;
             }
             
         } catch (SQLException e) {
-            logger.error("Error getting division by ID", e);
+            logger.error("Error getting division by ID: {}", divisionId, e);
         }
         
         return null;

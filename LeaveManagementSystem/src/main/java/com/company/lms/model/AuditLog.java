@@ -7,12 +7,16 @@ public class AuditLog {
     private String tableName;
     private int recordID;
     private String action;
+    private String actionDisplay;
     private Integer employeeID;
     private String employeeName;
     private String employeeCode;
+    private Integer divisionID;
+    private String divisionName;
+    private String divisionCode;
     private String oldValue;
     private String newValue;
-    private String note;  // ✅ THÊM
+    private String note;
     private String iPAddress;
     private String userAgent;
     private Timestamp createdAt;
@@ -30,6 +34,9 @@ public class AuditLog {
     public String getAction() { return action; }
     public void setAction(String action) { this.action = action; }
     
+    public String getActionDisplay() { return actionDisplay; }
+    public void setActionDisplay(String actionDisplay) { this.actionDisplay = actionDisplay; }
+    
     public Integer getEmployeeID() { return employeeID; }
     public void setEmployeeID(Integer employeeID) { this.employeeID = employeeID; }
     
@@ -39,13 +46,21 @@ public class AuditLog {
     public String getEmployeeCode() { return employeeCode; }
     public void setEmployeeCode(String employeeCode) { this.employeeCode = employeeCode; }
     
+    public Integer getDivisionID() { return divisionID; }
+    public void setDivisionID(Integer divisionID) { this.divisionID = divisionID; }
+    
+    public String getDivisionName() { return divisionName; }
+    public void setDivisionName(String divisionName) { this.divisionName = divisionName; }
+    
+    public String getDivisionCode() { return divisionCode; }
+    public void setDivisionCode(String divisionCode) { this.divisionCode = divisionCode; }
+    
     public String getOldValue() { return oldValue; }
     public void setOldValue(String oldValue) { this.oldValue = oldValue; }
     
     public String getNewValue() { return newValue; }
     public void setNewValue(String newValue) { this.newValue = newValue; }
     
-    // ✅ THÊM
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }
     
@@ -58,12 +73,17 @@ public class AuditLog {
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
     
-    public String getActionDisplay() {
-        if ("INSERT".equals(action)) return "Tạo mới";
-        if ("UPDATE".equals(action)) return "Cập nhật";
-        if ("DELETE".equals(action)) return "Xóa";
-        if ("APPROVE".equals(action)) return "Duyệt";
-        if ("REJECT".equals(action)) return "Từ chối";
-        return action;
+    /**
+     * Lấy màu badge theo action
+     */
+    public String getActionBadgeClass() {
+        if (action == null) return "action-update";
+        
+        switch (action) {
+            case "APPROVE": return "action-approve";
+            case "REJECT": return "action-reject";
+            case "UPDATE": return "action-update";
+            default: return "action-update";
+        }
     }
 }

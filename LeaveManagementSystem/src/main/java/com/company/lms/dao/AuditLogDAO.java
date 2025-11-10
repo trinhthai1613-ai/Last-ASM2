@@ -12,48 +12,55 @@ import java.util.List;
 public class AuditLogDAO {
     private static final Logger logger = LoggerFactory.getLogger(AuditLogDAO.class);
 
-    public List<AuditLog> getAllAuditLogs(String tableName, Integer employeeId, Date fromDate, Date toDate) {
+    /**
+     * Lấy audit logs với filter theo phòng ban, nhân viên, thời gian, action
+     */
+    public List<AuditLog> getAuditLogsWithDivision(
+            Integer divisionId, 
+            Integer employeeId, 
+            Date fromDate, 
+            Date toDate,
+            String action) {
+        
         List<AuditLog> logs = new ArrayList<>();
-        StringBuilder sql = new StringBuilder(
-            "SELECT a.*, e.FullName as EmployeeName, e.EmployeeCode " +
-            "FROM AuditLogs a " +
-            "LEFT JOIN Employees e ON a.EmployeeID = e.EmployeeID " +
-            "WHERE 1=1 "
-        );
-        
-        if (tableName != null && !tableName.isEmpty()) {
-            sql.append("AND a.TableName = ? ");
-        }
-        if (employeeId != null) {
-            sql.append("AND a.EmployeeID = ? ");
-        }
-        if (fromDate != null) {
-            sql.append("AND a.CreatedAt >= ? ");
-        }
-        if (toDate != null) {
-            sql.append("AND a.CreatedAt <= ? ");
-        }
-        
-        sql.append("ORDER BY a.CreatedAt DESC");
+        String sql = "{CALL sp_GetAuditLogsWithDivision(?, ?, ?, ?, ?)}";
         
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+             CallableStatement stmt = conn.prepareCall(sql)) {
             
-            int paramIndex = 1;
-            if (tableName != null && !tableName.isEmpty()) {
-                stmt.setString(paramIndex++, tableName);
+            // Set parameters
+            if (divisionId != null) {
+                stmt.setInt(1, divisionId);
+            } else {
+                stmt.setNull(1, Types.INTEGER);
             }
+            
             if (employeeId != null) {
-                stmt.setInt(paramIndex++, employeeId);
+                stmt.setInt(2, employeeId);
+            } else {
+                stmt.setNull(2, Types.INTEGER);
             }
+            
             if (fromDate != null) {
-                stmt.setDate(paramIndex++, fromDate);
+                stmt.setDate(3, fromDate);
+            } else {
+                stmt.setNull(3, Types.DATE);
             }
+            
             if (toDate != null) {
-                stmt.setDate(paramIndex++, toDate);
+                stmt.setDate(4, toDate);
+            } else {
+                stmt.setNull(4, Types.DATE);
+            }
+            
+            if (action != null && !action.isEmpty()) {
+                stmt.setString(5, action);
+            } else {
+                stmt.setNull(5, Types.VARCHAR);
             }
             
             ResultSet rs = stmt.executeQuery();
+            
             while (rs.next()) {
                 AuditLog log = new AuditLog();
                 log.setAuditID(rs.getLong("AuditID"));
@@ -61,19 +68,26 @@ public class AuditLogDAO {
                 log.setRecordID(rs.getInt("RecordID"));
                 log.setAction(rs.getString("Action"));
                 log.setEmployeeID(rs.getInt("EmployeeID"));
-                log.setEmployeeName(rs.getString("EmployeeName"));
                 log.setEmployeeCode(rs.getString("EmployeeCode"));
+                log.setEmployeeName(rs.getString("EmployeeName"));
+                log.setDivisionID(rs.getInt("DivisionID"));
+                log.setDivisionName(rs.getString("DivisionName"));
+                log.setDivisionCode(rs.getString("DivisionCode"));
                 log.setOldValue(rs.getString("OldValue"));
                 log.setNewValue(rs.getString("NewValue"));
+                log.setNote(rs.getString("Note"));
                 log.setIPAddress(rs.getString("IPAddress"));
                 log.setUserAgent(rs.getString("UserAgent"));
                 log.setCreatedAt(rs.getTimestamp("CreatedAt"));
-                log.setNote(rs.getString("Note"));
+                log.setActionDisplay(rs.getString("ActionDisplay"));
+                
                 logs.add(log);
             }
             
+            logger.info("Retrieved {} audit logs", logs.size());
+            
         } catch (SQLException e) {
-            logger.error("Error getting audit logs", e);
+            logger.error("Error getting audit logs with division filter", e);
         }
         
         return logs;
